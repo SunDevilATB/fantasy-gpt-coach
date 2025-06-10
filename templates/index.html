@@ -390,16 +390,35 @@
       drawer.style.display = drawer.style.display === "none" ? "block" : "none";
     }
 
-    function submitChat() {
-      const input = document.getElementById("chat-input").value;
-      if (!input) return;
-      document.getElementById("chat-response").innerText = "⏳ GPT is thinking...";
+let chatHistory = [];
 
-      // Placeholder response — will wire up to GPT later
-      setTimeout(() => {
-        document.getElementById("chat-response").innerText = `🤖 (pretend GPT): "${input}" is a great question!`;
-      }, 1000);
-    }
+async function submitChat() {
+  const input = document.getElementById("chat-input").value.trim();
+  if (!input) return;
+
+  chatHistory.push({ role: "user", content: input });
+  document.getElementById("chat-response").innerText = "⏳ GPT is thinking...";
+
+  const res = await fetch("/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: input,
+      history: chatHistory
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.error) {
+    document.getElementById("chat-response").innerText = "⚠️ " + data.error;
+    return;
+  }
+
+  document.getElementById("chat-response").innerText = data.reply;
+  chatHistory.push({ role: "assistant", content: data.reply });
+}
+
   </script>
 </body>
 </html>
