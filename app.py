@@ -111,11 +111,16 @@ Please respond in **valid JSON format** with the following structure:
 def ui():
     return render_template("index.html")
 
+@app.route("/current-week", methods=["GET"])
+def current_week():
+    return jsonify({"week": get_current_nfl_week()})
+
+
 @app.route("/recommend", methods=["POST"])
 def recommend():
     try:
         data = request.get_json()
-        stats = get_player_stats(week=1)
+        stats = get_player_stats()  # Uses auto-detected week
         prompt = build_prompt(data, stats)
 
         response = client.chat.completions.create(
@@ -124,19 +129,15 @@ def recommend():
             temperature=0.7
         )
 
-        raw = response.choices[0].message.content.strip()
+        advice = response.choices[0].message.content
+        print("Prompt:\n", prompt)
+        print("Advice:\n", advice)
 
-        # Try to parse the JSON response from GPT
-        try:
-            if raw.startswith("```json"):
-                raw = raw.split("```json")[1].split("```")[0].strip()
-            parsed = json.loads(raw)
-            return jsonify(parsed)
-        except Exception:
-            return jsonify({"raw_output": raw, "error": "Failed to parse JSON"}), 200
+        return jsonify({"advice": advice})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
