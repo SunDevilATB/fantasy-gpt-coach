@@ -280,13 +280,36 @@
       document.getElementById("output").innerHTML = "⏳ Thinking...";
       document.getElementById("week-label").innerText = "Using latest stats for current NFL week (auto-detected)";
 
-      const res = await fetch("/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+let res;
+try {
+  res = await fetch("/recommend", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+} catch (err) {
+  out.innerHTML = "❌ Network error. Please check your server.";
+  console.error("Fetch error:", err);
+  return;
+}
 
-      const data = await res.json();
+if (!res.ok) {
+  const text = await res.text();
+  out.innerHTML = `❌ Server error (${res.status}): ${text}`;
+  console.error("Server error response:", text);
+  return;
+}
+
+let data;
+try {
+  data = await res.json();
+  console.log("Advice response:", data);
+} catch (err) {
+  out.innerHTML = "❌ Failed to parse JSON response.";
+  console.error("JSON parse error:", err);
+  return;
+}
+
       const out = document.getElementById("output");
 
       if (data.error) {
