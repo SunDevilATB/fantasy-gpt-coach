@@ -11,7 +11,7 @@
     .output { background: #f6f6f6; padding: 10px; border-radius: 6px; margin-top: 10px; }
     .pos { font-weight: bold; margin-top: 10px; }
     ul { padding-left: 20px; }
-	.button-row {
+.button-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -32,6 +32,7 @@
 .button-row button:hover {
   background-color: #222;
 }
+
 @media (max-width: 500px) {
   .button-row {
     flex-direction: column;
@@ -71,11 +72,14 @@
   "FLEX": ["Javonte Williams"],
   "BENCH": ["Elijah Moore", "Zamir White", "Michael Mayer"]
 }'></textarea>
+
 <div class="button-row">
   <button onclick="loadSampleRoster('ppr')">📋 Load PPR Roster</button>
   <button onclick="loadSampleRoster('2qb')">📋 Load 2QB Roster</button>
   <button onclick="loadSampleRoster('random')">🎲 Random Roster</button>
   <button onclick="clearRoster()">🧹 Clear Roster</button>
+    <button onclick="loadSampleRoster()">📋 Load Sample Roster</button>	
+  <button onclick="getAdvice()">🔍 Get Lineup Advice</button>
 </div>
   <button onclick="loadSampleRoster()">📋 Load Sample Roster</button>	
   <button onclick="getAdvice()">🔍 Get Lineup Advice</button>
