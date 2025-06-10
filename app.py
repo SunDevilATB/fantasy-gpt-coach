@@ -125,6 +125,28 @@ def recommend():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+@app.route("/chat", methods=["POST"])
+def chat():
+    try:
+        data = request.get_json()
+        user_message = data.get("message", "")
+        previous_messages = data.get("history", [])
+
+        messages = [{"role": "system", "content": "You are a helpful fantasy football coach and analyst."}]
+        messages += previous_messages  # previous_messages is a list of {role, content}
+        messages.append({"role": "user", "content": user_message})
+
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.7
+        )
+
+        reply = response.choices[0].message.content
+        return jsonify({ "reply": reply })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Health check
 @app.route("/", methods=["GET"])
