@@ -140,6 +140,7 @@ def chat():
             model="gpt-4",
             messages=messages,
             temperature=0.7
+            max_tokens=200  # limit the length of the response
         )
 
         reply = response.choices[0].message.content
