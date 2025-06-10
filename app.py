@@ -130,8 +130,7 @@ def recommend():
         )
 
         advice = response.choices[0].message.content
-        print("Prompt:\n", prompt)
-        print("Advice:\n", advice)
+
 
         return jsonify({"advice": advice})
 
