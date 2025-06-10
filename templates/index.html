@@ -1,10 +1,10 @@
+
 <!DOCTYPE html>
 <html>
 <head>
   <title>Fantasy Football GPT Coach</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="https://fav.farm/🏈" />
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -13,94 +13,6 @@
       max-width: 900px;
       margin: auto;
       padding: 30px 20px;
-      transition: background 0.3s ease, color 0.3s ease;
-    }
-
-    #theme-toggle {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #eee;
-      color: #333;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      z-index: 100;
-    }
-
-    body.dark #theme-toggle {
-      background: #333;
-      color: #eee;
-    }
-
-    h1 {
-      font-size: 32px;
-      margin-bottom: 20px;
-      color: #202124;
-    }
-
-    label {
-      margin-top: 20px;
-      font-weight: 600;
-      display: block;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-family: inherit;
-    }
-
-    textarea {
-      font-family: monospace;
-    }
-
-    button {
-      font-size: 16px;
-      padding: 10px 14px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      font-weight: 500;
-    }
-
-    .button-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .button-row button {
-      background-color: #444;
-      color: white;
-    }
-
-    .button-row button:hover {
-      background-color: #222;
-    }
-
-    h2 {
-      margin-top: 40px;
-      font-size: 24px;
-      border-bottom: 2px solid #ddd;
-      padding-bottom: 6px;
-    }
-
-    .output {
-      background: #fff;
-      border: 1px solid #ddd;
-      padding: 16px;
-      border-radius: 8px;
-      margin-top: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
     .section-header {
@@ -147,169 +59,32 @@
       font-style: italic;
       border-radius: 6px;
     }
-
-    @media (max-width: 600px) {
-      .button-row {
-        flex-direction: column;
-      }
-
-      button {
-        width: 100%;
-        font-size: 16px;
-        padding: 12px;
-      }
-    }
-
-    body.dark {
-      background: #1e1e1e;
-      color: #e0e0e0;
-    }
-
-    body.dark input,
-    body.dark select,
-    body.dark textarea,
-    body.dark .output {
-      background: #2c2c2c;
-      color: #e0e0e0;
-      border-color: #555;
-    }
   </style>
 </head>
 <body>
-  <button id="theme-toggle">🌃 Toggle Dark Mode</button>
-
   <h1>🏈 Fantasy GPT Coach</h1>
-
-  <label>League Format</label>
-  <select id="format">
-    <option value="Standard (Non-PPR)">Standard (Non-PPR)</option>
-    <option value="PPR">PPR</option>
-    <option value="Half-PPR">Half-PPR</option>
-    <option value="2QB">2QB</option>
-    <option value="Superflex">Superflex</option>
-    <option value="Dynasty PPR">Dynasty PPR</option>
-    <option value="Custom">Custom (see below)</option>
-  </select>
-
-  <div id="custom-format-wrapper" style="display: none;">
-    <label>Describe Your Custom Format</label>
-    <input id="custom-format" placeholder="e.g. IDP, TE Premium, 3 FLEX, etc." />
-  </div>
-
-  <label>Notes (Optional)</label>
-  <input id="notes" placeholder="e.g. Facing the top team, injuries, weather" />
-
-  <label>Paste Your Roster JSON</label>
-  <textarea id="roster" rows="10" placeholder='{
-    "QB": ["Kirk Cousins", "Brock Purdy"],
-    "RB": ["Najee Harris", "James Conner"],
-    "WR": ["Tyreek Hill", "Mike Evans"],
-    "TE": ["Sam LaPorta"],
-    "FLEX": ["Javonte Williams"],
-    "BENCH": ["Elijah Moore", "Zamir White", "Michael Mayer"]
-  }'></textarea>
-
-  <div class="button-row">
-    <button onclick="loadSampleRoster('ppr')">📋 Load PPR Roster</button>
-    <button onclick="loadSampleRoster('2qb')">📋 Load 2QB Roster</button>
-    <button onclick="loadSampleRoster('random')">🎲 Random Roster</button>
-    <button onclick="clearRoster()">🧹 Clear Roster</button>
-  </div>
-
-  <button style="margin-top: 20px;" onclick="getAdvice()">🔍 Get Lineup Advice</button>
-
-  <h2>📋 Advice</h2>
-  <div id="output" class="output">Waiting...</div>
-  <p id="week-label" style="font-size: 14px; color: #555; margin-top: 6px;"></p>
+  <div id="output">Waiting for response...</div>
 
   <script>
-    document.getElementById("format").addEventListener("change", function () {
-      const selected = this.value;
-      const wrapper = document.getElementById("custom-format-wrapper");
-      wrapper.style.display = selected === "Custom" ? "block" : "none";
-    });
+    async function getAdvice() {
+      const res = await fetch("/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scoring_format: "PPR",
+          notes: "",
+          roster: {
+            "QB": ["Tua Tagovailoa", "Jordan Love", "Jimmy Garoppolo"],
+            "RB": ["Josh Jacobs", "Tony Pollard"],
+            "WR": ["Keenan Allen", "Chris Olave"],
+            "TE": ["David Njoku"],
+            "FLEX": ["Zay Flowers"],
+            "BENCH": ["Brian Robinson Jr.", "Dalton Kincaid"]
+          }
+        })
+      });
 
-    function loadSampleRoster(type) {
-      const ppr = {
-        "QB": ["Kirk Cousins", "Brock Purdy"],
-        "RB": ["Bijan Robinson", "Travis Etienne"],
-        "WR": ["Tyreek Hill", "CeeDee Lamb"],
-        "TE": ["Sam LaPorta"],
-        "FLEX": ["Christian Kirk"],
-        "BENCH": ["Najee Harris", "Gabe Davis", "Evan Engram"]
-      };
-
-      const qb2 = {
-        "QB": ["Tua Tagovailoa", "Jordan Love", "Jimmy Garoppolo"],
-        "RB": ["Josh Jacobs", "Tony Pollard"],
-        "WR": ["Keenan Allen", "Chris Olave"],
-        "TE": ["David Njoku"],
-        "FLEX": ["Zay Flowers"],
-        "BENCH": ["Brian Robinson Jr.", "Dalton Kincaid"]
-      };
-
-      const randoms = [ppr, qb2];
-      const sample = type === "ppr" ? ppr : type === "2qb" ? qb2 : randoms[Math.floor(Math.random() * randoms.length)];
-      document.getElementById("roster").value = JSON.stringify(sample, null, 2);
-    }
-
-    function clearRoster() {
-      document.getElementById("roster").value = "";
-    }
-      async function getAdvice() {
-      const format = document.getElementById("format").value;
-      const customFormat = document.getElementById("custom-format").value;
-      const notes = document.getElementById("notes").value;
-      const rosterInput = document.getElementById("roster").value;
-      let roster;
-
-      try {
-        roster = JSON.parse(rosterInput);
-      } catch (e) {
-        alert("⚠️ Invalid JSON in roster.");
-        return;
-      }
-
-      const fullFormat = (format === "Custom") ? `Custom: ${customFormat}` : format;
-      const payload = {
-        scoring_format: fullFormat,
-        notes: notes,
-        roster: roster
-      };
-
-      document.getElementById("output").innerHTML = "⏳ Thinking...";
-      document.getElementById("week-label").innerText = "Using latest stats for current NFL week (auto-detected)";
-
-let res;
-try {
-  res = await fetch("/recommend", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-} catch (err) {
-  out.innerHTML = "❌ Network error. Please check your server.";
-  console.error("Fetch error:", err);
-  return;
-}
-
-if (!res.ok) {
-  const text = await res.text();
-  out.innerHTML = `❌ Server error (${res.status}): ${text}`;
-  console.error("Server error response:", text);
-  return;
-}
-
-let data;
-try {
-  data = await res.json();
-  console.log("Advice response:", data);
-} catch (err) {
-  out.innerHTML = "❌ Failed to parse JSON response.";
-  console.error("JSON parse error:", err);
-  return;
-}
-
+      const data = await res.json();
       const out = document.getElementById("output");
 
       if (data.error) {
@@ -338,14 +113,8 @@ try {
 
       out.innerHTML = html;
     }
-      // Dark mode toggle
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") document.body.classList.add("dark");
 
-    document.getElementById("theme-toggle").onclick = () => {
-      const isDark = document.body.classList.toggle("dark");
-      localStorage.setItem("theme", isDark ? "dark" : "light");
-    };
-</script>
+    getAdvice();
+  </script>
 </body>
 </html>
