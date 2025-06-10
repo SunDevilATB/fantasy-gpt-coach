@@ -1,181 +1,62 @@
-from flask import render_template
-from flask import Flask, request, jsonify, render_template
-from openai import OpenAI
-from dotenv import load_dotenv
-
 import os
 import json
-import requests
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import openai
 
-# Load environment variables
-load_dotenv()
-
-# OpenAI client setup
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# Initialize Flask app
 app = Flask(__name__)
+CORS(app)
 
-# Load player map from Sleeper API and cache locally
-def load_player_map():
-    path = "sleeper_players.json"
-    if not os.path.exists(path):
-        print("Downloading player map from Sleeper...")
-        r = requests.get("https://api.sleeper.app/v1/players/nfl")
-        if r.status_code == 200:
-            with open(path, "w") as f:
-                f.write(json.dumps(r.json()))
-        else:
-            raise Exception("Could not download player map")
-    with open(path, "r") as f:
-        return json.load(f)
-
-player_map = load_player_map()
-
-# Match player name to Sleeper player_id
-def match_player_id(name, player_map):
-    name = name.lower().strip()
-    for player_id, data in player_map.items():
-        full_name = data.get("full_name", "").lower()
-        if name in full_name:
-            return player_id
-    return None
-
-# Get player stats from Sleeper API
-from datetime import datetime, timedelta
-
-def get_current_nfl_week(start_date_str="2024-09-05"):
-    start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-    today = datetime.now()
-    delta = today - start_date
-    week = (delta.days // 7) + 1
-    return max(1, min(week, 18))  # Clamp to 1–18
-
-def get_player_stats(week=None):
-    if week is None:
-        week = get_current_nfl_week()
-    url = f"https://api.sleeper.app/v1/stats/nfl/2023/regular/{week}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    return []
-
-
-# Build the GPT prompt using structured JSON
-def build_prompt(data, stats=None):
-    roster = data.get("roster", {})
-    scoring = data.get("scoring_format", "unknown format")
-    notes = data.get("notes", "None")
-
-    prompt = f"""
-You are a fantasy football coach and analyst.
-
-The user is playing in a {scoring} league.
-Here is their roster:
-
-{json.dumps(roster, indent=2)}
-
-Additional notes:
-{notes}
-"""
-
-    if stats:
-        prompt += "\nHere are some recent stats for their players:\n"
-        for position in roster:
-            for name in roster[position]:
-                player_id = match_player_id(name, player_map)
-                player_stats = next((s for s in stats if s.get("player_id") == player_id), None)
-                if player_stats:
-                    prompt += f"\n{name} ({player_id}): {json.dumps(player_stats, indent=2)}"
-
-    prompt += """
-Please respond in **valid JSON format** with the following structure:
-
-{
-  "recommended_starters": {
-    "QB": [],
-    "RB": [],
-    "WR": [],
-    "TE": [],
-    "FLEX": []
-  },
-  "bench": [],
-  "waiver_watchlist": [],
-  "strategy_summary": ""
-}
-"""
-    return prompt
-
-# POST endpoint for GPT recommendations
-@app.route("/ui")
-def ui():
-    return render_template("index.html")
-
-@app.route("/current-week", methods=["GET"])
-def current_week():
-    return jsonify({"week": get_current_nfl_week()})
-
-
-import json
+# Load your OpenAI key from environment variable
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
     try:
         data = request.get_json()
-        stats = get_player_stats()  # if you have this logic
-        prompt = build_prompt(data, stats)  # or just format from `data`
+
+        # Build the prompt
+        format = data.get("scoring_format", "PPR")
+        notes = data.get("notes", "")
+        roster = data.get("roster", {})
+
+        prompt = (
+            f"You are a fantasy football assistant. Based on this scoring format: '{format}', "
+            f"and these notes: '{notes}', give me lineup advice. "
+            f"Here is the user's roster:\n{json.dumps(roster, indent=2)}\n\n"
+            "Respond in valid JSON like this:\n"
+            "{\n"
+            "  \"recommended_starters\": { \"QB\": [\"...\"], \"RB\": [\"...\"], ... },\n"
+            "  \"bench\": [\"...\"],\n"
+            "  \"waiver_watchlist\": [\"...\"],\n"
+            "  \"strategy_summary\": \"...\"\n"
+            "}"
+        )
 
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are a fantasy football expert. Reply ONLY in JSON."},
+                {"role": "system", "content": "You are a helpful fantasy football assistant. Reply in JSON only."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7
         )
 
-        # GPT returns a JSON string, not a dict — parse it
-        advice_raw = response.choices[0].message.content.strip()
-        advice = json.loads(advice_raw)
+        # Parse the JSON string returned by GPT
+        raw_text = response.choices[0].message.content.strip()
+
+        try:
+            advice = json.loads(raw_text)
+        except json.JSONDecodeError:
+            print("❌ GPT returned invalid JSON:")
+            print(raw_text)
+            return jsonify({"error": "Invalid JSON returned from GPT"}), 500
 
         return jsonify(advice)
 
     except Exception as e:
-        print("Error in /recommend:", e)
+        print("❌ Server error:", str(e))
         return jsonify({"error": str(e)}), 500
-
-
-@app.route("/chat", methods=["POST"])
-def chat():
-    try:
-        data = request.get_json()
-        user_message = data.get("message", "")
-        previous_messages = data.get("history", [])
-
-        messages = [{"role": "system", "content": "You are a helpful fantasy football coach and analyst."}]
-        messages += previous_messages  # previous_messages is a list of {role, content}
-        messages.append({"role": "user", "content": user_message})
-
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=messages,
-            temperature=0.7,
-            max_tokens=200  # limit the length of the response
-        )
-
-        reply = response.choices[0].message.content
-        return jsonify({ "reply": reply })
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Health check
-@app.route("/", methods=["GET"])
-def landing():
-    return render_template("landing.html")
-
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # default to 5000 locally
-    app.run(host="0.0.0.0", port=port)
-
+    app.run(debug=True)
