@@ -3,6 +3,8 @@
 <head>
   <title>Fantasy Football GPT Coach</title>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -166,6 +168,53 @@
     padding: 14px;
   }
 }
+#chat-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #222;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+#chat-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+  border-top: 1px solid #ccc;
+  padding: 16px;
+  z-index: 100;
+  animation: slideUp 0.3s ease-out;
+}
+
+.chat-content h3 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.chat-content textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 15px;
+  padding: 10px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: none;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
 
   </style>
 </head>
@@ -328,6 +377,36 @@
 
       out.innerHTML = html;
     }
+	<!-- Slide-up Chat Drawer -->
+<div id="chat-drawer" style="display: none;">
+  <div class="chat-content">
+    <h3>💬 Ask About This Lineup</h3>
+    <textarea id="chat-input" rows="3" placeholder="Why did you recommend benching Mike Evans?"></textarea>
+    <button onclick="submitChat()">📨 Ask GPT</button>
+    <div id="chat-response" style="margin-top: 10px; font-size: 14px; color: #444;"></div>
+  </div>
+</div>
+
+<!-- Toggle Button -->
+<div id="chat-toggle" onclick="toggleChat()">🗨️ Ask GPT</div>
+
+function toggleChat() {
+  const drawer = document.getElementById("chat-drawer");
+  drawer.style.display = drawer.style.display === "none" ? "block" : "none";
+}
+
+function submitChat() {
+  const input = document.getElementById("chat-input").value;
+  if (!input) return;
+  document.getElementById("chat-response").innerText = "⏳ GPT is thinking...";
+
+  // TODO: Replace with real GPT fetch
+  setTimeout(() => {
+    document.getElementById("chat-response").innerText = `🤖 (pretend GPT): "${input}" is a great question!`;
+  }, 1000);
+}
+
   </script>
+  
 </body>
 </html>
