@@ -235,7 +235,11 @@
       };
 
       document.getElementById("output").innerHTML = "\u23f3 Thinking...";
-      document.getElementById("week-label").innerText = "Using latest stats for current NFL week (auto-detected)";
+		fetch("/current-week")
+		.then(res => res.json())
+		.then(data => {
+		document.getElementById("week-label").innerText = `Using stats from Week ${data.week}`;
+		});
 
       const res = await fetch("/recommend", {
         method: "POST",
