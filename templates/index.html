@@ -5,20 +5,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
+  
     body {
-      font-family: system-ui, sans-serif;
-      background: #f5f7fa;
-      color: #222;
-      max-width: 900px;
-      margin: auto;
-      padding: 30px 20px;
-    }
+  font-family: "Segoe UI", Roboto, system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.1px;
+  line-height: 1.5;
+}
 
-    h1 {
-      font-size: 32px;
-      margin-bottom: 20px;
-      color: #202124;
-    }
+	h1 {
+		margin-top: 0;
+		margin-bottom: 16px;
+		font-size: 28px;
+	}
 
     label {
       margin-top: 20px;
@@ -235,10 +234,27 @@
 .chat-log .assistant {
   background: #e6f4ea;
 }
+.container {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  margin-top: 40px;
+  margin-bottom: 80px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
 
   </style>
 </head>
 <body>
+<div class="container">
   <h1>🏈 Fantasy GPT Coach</h1>
 
   <label>League Format</label>
@@ -455,5 +471,6 @@ async function submitChat() {
 
 
   </script>
+  </div>
 </body>
 </html>
