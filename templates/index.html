@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fantasy Football GPT Coach</title>
+  <meta charset="UTF-8" />
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }
+    textarea, input, select, button { width: 100%; padding: 10px; margin-top: 10px; font-size: 16px; }
+    button { background: #222; color: #fff; cursor: pointer; border: none; }
+    h1, h2, h3 { margin-top: 30px; }
+    .output { background: #f6f6f6; padding: 10px; border-radius: 6px; margin-top: 10px; }
+    .pos { font-weight: bold; margin-top: 10px; }
+    ul { padding-left: 20px; }
+  </style>
+</head>
+<body>
+  <h1>🏈 Fantasy GPT Coach</h1>
+
+  <label>League Format</label>
+  <select id="format">
+    <option value="Standard (Non-PPR)">Standard (Non-PPR)</option>
+    <option value="PPR">PPR</option>
+    <option value="Half-PPR">Half-PPR</option>
+    <option value="2QB">2QB</option>
+    <option value="Superflex">Superflex</option>
+    <option value="Dynasty PPR">Dynasty PPR</option>
+    <option value="Custom">Custom (see below)</option>
+  </select>
+
+  <div id="custom-format-wrapper" style="display: none;">
+    <label>Describe Your Custom Format</label>
+    <input id="custom-format" placeholder="e.g. IDP, TE Premium, 3 FLEX, etc." />
+  </div>
+
+  <label>Notes (Optional)</label>
+  <input id="notes" placeholder="e.g. Facing the top team, injuries, weather" />
+
+  <label>Paste Your Roster JSON</label>
+  <textarea id="roster" rows="10" placeholder='{
+  "QB": ["Kirk Cousins", "Brock Purdy"],
+  "RB": ["Najee Harris", "James Conner"],
+  "WR": ["Tyreek Hill", "Mike Evans"],
+  "TE": ["Sam LaPorta"],
+  "FLEX": ["Javonte Williams"],
+  "BENCH": ["Elijah Moore", "Zamir White", "Michael Mayer"]
+}'></textarea>
+
+  <button onclick="getAdvice()">🔍 Get Lineup Advice</button>
+
+  <h2>📋 Advice</h2>
+  <div id="output" class="output">Waiting...</div>
+
+  <script>
+    // Load saved format on page load
+    window.onload = () => {
+      const savedFormat = localStorage.getItem("last_format");
+      if (savedFormat) {
+        document.getElementById("format").value = savedFormat;
+        if (savedFormat === "Custom") {
+          document.getElementById("custom-format-wrapper").style.display = "block";
+        }
+      }
+    };
+
+    // Show custom format input conditionally
+    document.getElementById("format").addEventListener("change", function () {
+      const selected = this.value;
+      const wrapper = document.getElementById("custom-format-wrapper");
+      wrapper.style.display = selected === "Custom" ? "block" : "none";
+    });
+
+    function saveFormat(format) {
+      localStorage.setItem("last_format", format);
+    }
+
+    async function getAdvice() {
+      const format = document.getElementById("format").value;
+      const customFormat = document.getElementById("custom-format").value;
+      const notes = document.getElementById("notes").value;
+      const rosterInput = document.getElementById("roster").value;
+      let roster;
+
+      try {
+        roster = JSON.parse(rosterInput);
+      } catch (e) {
+        alert("⚠️ Invalid JSON in roster.");
+        return;
+      }
+
+      const fullFormat = (format === "Custom") ? `Custom: ${customFormat}` : format;
+      saveFormat(format);
+
+      const payload = {
+        scoring_format: fullFormat,
+        notes: notes,
+        roster: roster
+      };
+
+      document.getElementById("output").innerHTML = "⏳ Thinking...";
+
+      const res = await fetch("/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      const out = document.getElementById("output");
+
+      if (data.error) {
+        out.innerHTML = "⚠️ " + data.error;
+        return;
+      }
+
+      if (data.raw_output) {
+        out.innerHTML = "<pre>" + data.raw_output + "</pre>";
+        return;
+      }
+
+      let html = "";
+
+      html += "<h3>✅ Recommended Starters</h3>";
+      for (const [pos, players] of Object.entries(data.recommended_starters || {})) {
+        html += `<div class="pos">${pos}</div><ul>`;
+        players.forEach(p => html += `<li>${p}</li>`);
+        html += "</ul>";
+      }
+
+      html += "<h3>🚩 Bench Suggestions</h3><ul>";
+      (data.bench || []).forEach(p => html += `<li>${p}</li>`);
+      html += "</ul>";
+
+      html += "<h3>👀 Waiver Watchlist</h3><ul>";
+      (data.waiver_watchlist || []).forEach(p => html += `<li>${p}</li>`);
+      html += "</ul>";
+
+      html += "<h3>🧠 Strategy Summary</h3>";
+      html += `<p>${data.strategy_summary || "No summary provided."}</p>`;
+
+      out.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

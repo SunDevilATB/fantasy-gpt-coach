@@ -1,0 +1,13 @@
+{
+  "team_name": "Bay City Ballers",
+  "scoring_format": "PPR, 2QB, 10-team",
+  "roster": {
+    "QB": ["Kirk Cousins", "Brock Purdy"],
+    "RB": ["Najee Harris", "James Conner"],
+    "WR": ["Tyreek Hill", "Mike Evans"],
+    "TE": ["Sam LaPorta"],
+    "FLEX": ["Javonte Williams"],
+    "BENCH": ["Elijah Moore", "Zamir White", "Michael Mayer"]
+  },
+  "notes": "Facing the top team this week, weather looks bad in Minnesota"
+}
