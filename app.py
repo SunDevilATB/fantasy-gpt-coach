@@ -4,11 +4,14 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static")
 CORS(app)
 
 # Load your OpenAI key from environment variable
 openai.api_key = os.getenv("OPENAI_API_KEY")
+@app.route("/")
+def index():
+    return app.send_static_file("index.html")
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
@@ -59,6 +62,8 @@ def recommend():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
+    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
