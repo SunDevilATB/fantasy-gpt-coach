@@ -11,3 +11,6 @@ __pycache__/
 
 # Sleeper data (optional)
 sleeper_players.json
+
+#VENV Folder
+venv/
