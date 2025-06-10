@@ -42,12 +42,24 @@ def match_player_id(name, player_map):
     return None
 
 # Get player stats from Sleeper API
-def get_player_stats(week=1):
+from datetime import datetime, timedelta
+
+def get_current_nfl_week(start_date_str="2024-09-05"):
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+    today = datetime.now()
+    delta = today - start_date
+    week = (delta.days // 7) + 1
+    return max(1, min(week, 18))  # Clamp to 1–18
+
+def get_player_stats(week=None):
+    if week is None:
+        week = get_current_nfl_week()
     url = f"https://api.sleeper.app/v1/stats/nfl/2023/regular/{week}"
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
     return []
+
 
 # Build the GPT prompt using structured JSON
 def build_prompt(data, stats=None):
