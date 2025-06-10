@@ -1,5 +1,5 @@
 from flask import render_template
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -151,8 +151,9 @@ def chat():
 
 # Health check
 @app.route("/", methods=["GET"])
-def index():
-    return "Fantasy Football GPT Coach is running!"
+def landing():
+    return render_template("landing.html")
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # default to 5000 locally
