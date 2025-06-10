@@ -118,6 +118,47 @@
       width: 100%;
     }
   }
+  
+  .section-header {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  margin-top: 24px;
+  color: #1a1a1a;
+}
+
+.section-header span {
+  margin-right: 8px;
+  font-size: 22px;
+}
+
+.pos {
+  font-weight: 600;
+  margin: 10px 0 5px;
+  color: #555;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+ul li {
+  margin-left: 10px;
+  padding-left: 6px;
+  border-left: 3px solid #ccc;
+  margin-bottom: 5px;
+}
+
+ul.recommended li { border-color: #4CAF50; }   /* green */
+ul.bench li { border-color: #F44336; }         /* red */
+ul.waiver li { border-color: #FF9800; }        /* orange */
+
+p.strategy {
+  background: #e0f7fa;
+  padding: 12px;
+  border-left: 5px solid #00acc1;
+  font-style: italic;
+  border-radius: 6px;
+}
+
 </style>
 
 </head>
@@ -235,23 +276,24 @@
 
       let html = "";
 
-      html += "<h3>✅ Recommended Starters</h3>";
-      for (const [pos, players] of Object.entries(data.recommended_starters || {})) {
-        html += `<div class="pos">${pos}</div><ul>`;
-        players.forEach(p => html += `<li>${p}</li>`);
-        html += "</ul>";
-      }
+html += `<div class="section-header"><span>✅</span><h3>Recommended Starters</h3></div>`;
+for (const [pos, players] of Object.entries(data.recommended_starters || {})) {
+  html += `<div class="pos">${pos}</div><ul class="recommended">`;
+  players.forEach(p => html += `<li>${p}</li>`);
+  html += "</ul>";
+}
 
-      html += "<h3>🚩 Bench Suggestions</h3><ul>";
-      (data.bench || []).forEach(p => html += `<li>${p}</li>`);
-      html += "</ul>";
+html += `<div class="section-header"><span>🚩</span><h3>Bench Suggestions</h3></div><ul class="bench">`;
+(data.bench || []).forEach(p => html += `<li>${p}</li>`);
+html += "</ul>";
 
-      html += "<h3>👀 Waiver Watchlist</h3><ul>";
-      (data.waiver_watchlist || []).forEach(p => html += `<li>${p}</li>`);
-      html += "</ul>";
+html += `<div class="section-header"><span>👀</span><h3>Waiver Watchlist</h3></div><ul class="waiver">`;
+(data.waiver_watchlist || []).forEach(p => html += `<li>${p}</li>`);
+html += "</ul>";
 
-      html += "<h3>🧠 Strategy Summary</h3>";
-      html += `<p>${data.strategy_summary || "No summary provided."}</p>`;
+html += `<div class="section-header"><span>🧠</span><h3>Strategy Summary</h3></div>`;
+html += `<p class="strategy">${data.strategy_summary || "No summary provided."}</p>`;
+
 
       out.innerHTML = html;
     }
