@@ -1,28 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="https://fav.farm/🏆" />
-<title>Fantasy GPT Coach 🏆</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#28a745">
+  <title>Fantasy GPT Coach 🏆</title>
   <style>
-  
-  @media (prefers-color-scheme: dark) {
-  body {
-    background: #1e1e1e;
-    color: #e0e0e0;
-  }
-  .container, .card, .chat-log .bubble {
-    background: #2b2b2b !important;
-    color: #e0e0e0;
-  }
-  a.button {
-    background: #4caf50;
-  }
-  a.button:hover {
-    background: #43a047;
-  }
-}
-
     body {
       font-family: system-ui, sans-serif;
       background: linear-gradient(to right, #f5f7fa, #e3f2fd);
@@ -57,10 +42,49 @@
       background: #218838;
     }
 
+    section {
+      margin-top: 60px;
+    }
+
+    section h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      font-size: 17px;
+    }
+
+    ul li {
+      margin-bottom: 10px;
+    }
+
+    img {
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
     footer {
       margin-top: 60px;
       font-size: 13px;
       color: #888;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #1e1e1e;
+        color: #e0e0e0;
+      }
+
+      a.button {
+        background: #4caf50;
+      }
+
+      a.button:hover {
+        background: #43a047;
+      }
     }
   </style>
 </head>
@@ -68,25 +92,16 @@
   <h1>🏈 Fantasy GPT Coach</h1>
   <p>Get weekly, AI-powered lineup advice for your fantasy football team. Built with GPT-4 and optimized for mobile.</p>
   <a class="button" href="/ui">Try the Lineup Tool</a>
-  <section style="margin-top: 60px;">
-  <h2 style="font-size: 24px;">💡 What It Does</h2>
-  <ul style="list-style: none; padding: 0; font-size: 17px;">
-    <li>✅ Recommends weekly starters based on your roster</li>
-    <li>🧠 Defends its logic — chat with GPT about its picks</li>
-    <li>👀 Suggests waiver pickups based on league format</li>
-    <li>📱 Works great on mobile and is 100% free</li>
-  </ul>
-</section>
 
-<section style="margin-top: 40px;">
-  <h2 style="font-size: 22px;">🖼 Preview</h2>
-  <img src="https://via.placeholder.com/600x300?text=Lineup+Tool+Screenshot" style="width: 100%; max-width: 600px; border-radius: 12px;" alt="Tool preview" />
-</section>
+  <section>
+    <h2>💡 What It Does</h2>
+    <ul>
+      <li>✅ Recommends weekly starters based on your roster</li>
+      <li>🧠 Defends its logic — chat with GPT about its picks</li>
+      <li>👀 Suggests waiver pickups based on league format</li>
+      <li>📱 Works great on mobile and is 100% free</li>
+    </ul>
+  </section>
 
-
-  <<footer>
-  Built with ❤️ using GPT-4, Flask, and Sleeper API<br>
-  Not affiliated with the NFL or any fantasy platform.
-</footer>
-</body>
-</html>
+  <section>
+    <h2>�
