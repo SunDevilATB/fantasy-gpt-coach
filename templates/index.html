@@ -4,42 +4,122 @@
   <title>Fantasy Football GPT Coach</title>
   <meta charset="UTF-8" />
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }
-    textarea, input, select, button { width: 100%; padding: 10px; margin-top: 10px; font-size: 16px; }
-    button { background: #222; color: #fff; cursor: pointer; border: none; }
-    h1, h2, h3 { margin-top: 30px; }
-    .output { background: #f6f6f6; padding: 10px; border-radius: 6px; margin-top: 10px; }
-    .pos { font-weight: bold; margin-top: 10px; }
-    ul { padding-left: 20px; }
-.button-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.button-row button {
-  background-color: #444;
-  color: #fff;
-  border: none;
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 15px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.button-row button:hover {
-  background-color: #222;
-}
-
-@media (max-width: 500px) {
-  .button-row {
-    flex-direction: column;
+  body {
+    font-family: system-ui, sans-serif;
+    background: #f5f7fa;
+    color: #222;
+    max-width: 900px;
+    margin: auto;
+    padding: 30px 20px;
   }
-}
 
-  </style>
+  h1 {
+    font-size: 32px;
+    margin-bottom: 20px;
+    color: #202124;
+  }
+
+  label {
+    margin-top: 20px;
+    font-weight: 600;
+    display: block;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 6px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-family: inherit;
+  }
+
+  textarea {
+    font-family: monospace;
+  }
+
+  button {
+    font-size: 16px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+  }
+
+  .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .button-row button {
+    background-color: #444;
+    color: white;
+  }
+
+  .button-row button:hover {
+    background-color: #222;
+  }
+
+  h2 {
+    margin-top: 40px;
+    font-size: 24px;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 6px;
+  }
+
+  h3 {
+    margin-top: 24px;
+    font-size: 20px;
+    color: #333;
+  }
+
+  .output {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+
+  .pos {
+    font-weight: 600;
+    margin-top: 10px;
+    color: #202124;
+  }
+
+  ul {
+    padding-left: 20px;
+    margin-top: 5px;
+  }
+
+  pre {
+    background: #eee;
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+  }
+
+  @media (max-width: 600px) {
+    body {
+      padding: 20px 10px;
+    }
+
+    .button-row {
+      flex-direction: column;
+    }
+
+    button {
+      width: 100%;
+    }
+  }
+</style>
+
 </head>
 <body>
   <h1>🏈 Fantasy GPT Coach</h1>
