@@ -86,10 +86,45 @@
         background: #43a047;
       }
     }
+	body.dark {
+  background: #1e1e1e;
+  color: #e0e0e0;
+}
+
+body.dark a.button {
+  background: #4caf50;
+}
+
+body.dark a.button:hover {
+  background: #43a047;
+}
+
+body.dark section,
+body.dark footer {
+  color: #e0e0e0;
+}
+
+body.dark img {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+
   </style>
 </head>
+<script>
+  // Apply saved theme
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "dark") document.body.classList.add("dark");
+
+  // Toggle on click
+  document.getElementById("theme-toggle").onclick = () => {
+    const isDark = document.body.classList.toggle("dark");
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+  };
+</script>
+
 <body>
   <h1>🏈 Fantasy GPT Coach</h1>
+  <button id="theme-toggle" style="margin-bottom: 20px;">🌓 Toggle Dark Mode</button>
   <p>Get weekly, AI-powered lineup advice for your fantasy football team. Built with GPT-4 and optimized for mobile.</p>
   <a class="button" href="/ui">Try the Lineup Tool</a>
 
