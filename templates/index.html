@@ -128,6 +128,70 @@
       color: #e0e0e0;
       border-color: #555;
     }
+	.section-header {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  margin-top: 24px;
+  color: #1a1a1a;
+}
+
+.section-header span {
+  margin-right: 8px;
+  font-size: 22px;
+}
+
+.pos {
+  font-weight: 600;
+  margin: 10px 0 5px;
+  color: #555;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+ul {
+  padding-left: 20px;
+  margin-top: 5px;
+}
+
+ul li {
+  margin-left: 10px;
+  padding-left: 6px;
+  border-left: 3px solid #ccc;
+  margin-bottom: 5px;
+}
+
+ul.recommended li { border-color: #4CAF50; }
+ul.bench li { border-color: #F44336; }
+ul.waiver li { border-color: #FF9800; }
+
+p.strategy {
+  background: #e0f7fa;
+  padding: 12px;
+  border-left: 5px solid #00acc1;
+  font-style: italic;
+  border-radius: 6px;
+}
+body.dark .section-header,
+body.dark .pos,
+body.dark ul li,
+body.dark p.strategy {
+  color: #e0e0e0;
+}
+
+body.dark ul li {
+  border-color: #555;
+}
+
+body.dark ul.recommended li { border-color: #66bb6a; }
+body.dark ul.bench li { border-color: #ef5350; }
+body.dark ul.waiver li { border-color: #ffa726; }
+
+body.dark p.strategy {
+  background: #2d4a4d;
+  border-left-color: #4dd0e1;
+}
+
   </style>
 </head>
 <body>
@@ -213,55 +277,66 @@
       document.getElementById("roster").value = "";
     }
 
-    async function getAdvice() {
-      const format = document.getElementById("format").value;
-      const customFormat = document.getElementById("custom-format").value;
-      const notes = document.getElementById("notes").value;
-      const rosterInput = document.getElementById("roster").value;
-      let roster;
+   async function getAdvice() {
+    const format = document.getElementById("format").value;
+    const customFormat = document.getElementById("custom-format").value;
+    const notes = document.getElementById("notes").value;
+    const rosterInput = document.getElementById("roster").value;
+    let roster;
 
-      try {
-        roster = JSON.parse(rosterInput);
-      } catch (e) {
-        alert("\u26a0\ufe0f Invalid JSON in roster.");
-        return;
-      }
-
-      const fullFormat = (format === "Custom") ? `Custom: ${customFormat}` : format;
-      const payload = {
-        scoring_format: fullFormat,
-        notes: notes,
-        roster: roster
-      };
-
-      document.getElementById("output").innerHTML = "\u23f3 Thinking...";
-		fetch("/current-week")
-		.then(res => res.json())
-		.then(data => {
-		document.getElementById("week-label").innerText = `Using stats from Week ${data.week}`;
-		});
-
-      const res = await fetch("/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-      const out = document.getElementById("output");
-
-      if (data.error) {
-        out.innerHTML = "\u26a0\ufe0f " + data.error;
-        return;
-      }
-
-      if (data.raw_output) {
-        out.innerHTML = "<pre>" + data.raw_output + "</pre>";
-        return;
-      }
-
-      out.innerHTML = data.advice || "\u2753 No advice returned.";
+    try {
+      roster = JSON.parse(rosterInput);
+    } catch (e) {
+      alert("⚠️ Invalid JSON in roster.");
+      return;
     }
+
+    const fullFormat = (format === "Custom") ? `Custom: ${customFormat}` : format;
+    const payload = {
+      scoring_format: fullFormat,
+      notes: notes,
+      roster: roster
+    };
+
+    document.getElementById("output").innerHTML = "⏳ Thinking...";
+    document.getElementById("week-label").innerText = "Using latest stats for current NFL week (auto-detected)";
+
+    const res = await fetch("/recommend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    const out = document.getElementById("output");
+
+    if (data.error) {
+      out.innerHTML = "⚠️ " + data.error;
+      return;
+    }
+
+    let html = "";
+
+    html += `<div class="section-header"><span>✅</span><h3>Recommended Starters</h3></div>`;
+    for (const [pos, players] of Object.entries(data.recommended_starters || {})) {
+      html += `<div class="pos">${pos}</div><ul class="recommended">`;
+      players.forEach(p => html += `<li>${p}</li>`);
+      html += "</ul>";
+    }
+
+    html += `<div class="section-header"><span>🚩</span><h3>Bench Suggestions</h3></div><ul class="bench">`;
+    (data.bench || []).forEach(p => html += `<li>${p}</li>`);
+    html += "</ul>";
+
+    html += `<div class="section-header"><span>👀</span><h3>Waiver Watchlist</h3></div><ul class="waiver">`;
+    (data.waiver_watchlist || []).forEach(p => html += `<li>${p}</li>`);
+    html += "</ul>";
+
+    html += `<div class="section-header"><span>🧠</span><h3>Strategy Summary</h3></div>`;
+    html += `<p class="strategy">${data.strategy_summary || "No summary provided."}</p>`;
+
+    out.innerHTML = html;
+  }
   </script>
 </body>
 </html>
