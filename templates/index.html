@@ -44,7 +44,7 @@
   "FLEX": ["Javonte Williams"],
   "BENCH": ["Elijah Moore", "Zamir White", "Michael Mayer"]
 }'></textarea>
-
+  <button onclick="loadSampleRoster()">📋 Load Sample Roster</button>	
   <button onclick="getAdvice()">🔍 Get Lineup Advice</button>
 
   <h2>📋 Advice</h2>
@@ -139,6 +139,20 @@
 
       out.innerHTML = html;
     }
+
+  function loadSampleRoster() {
+    const sample = {
+      "QB": ["Kirk Cousins", "Brock Purdy"],
+      "RB": ["Bijan Robinson", "Travis Etienne"],
+      "WR": ["Tyreek Hill", "CeeDee Lamb"],
+      "TE": ["Sam LaPorta"],
+      "FLEX": ["Christian Kirk"],
+      "BENCH": ["Najee Harris", "Gabe Davis", "Evan Engram"]
+    };
+    document.getElementById("roster").value = JSON.stringify(sample, null, 2);
+  }
+
+
   </script>
 </body>
 </html>
