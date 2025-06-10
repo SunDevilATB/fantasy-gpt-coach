@@ -180,7 +180,44 @@
 
   <h1>🏈 Fantasy GPT Coach</h1>
 
-  <!-- ... existing inputs unchanged ... -->
+  <label>League Format</label>
+<select id="format">
+  <option value="Standard (Non-PPR)">Standard (Non-PPR)</option>
+  <option value="PPR">PPR</option>
+  <option value="Half-PPR">Half-PPR</option>
+  <option value="2QB">2QB</option>
+  <option value="Superflex">Superflex</option>
+  <option value="Dynasty PPR">Dynasty PPR</option>
+  <option value="Custom">Custom (see below)</option>
+</select>
+
+<div id="custom-format-wrapper" style="display: none;">
+  <label>Describe Your Custom Format</label>
+  <input id="custom-format" placeholder="e.g. IDP, TE Premium, 3 FLEX, etc." />
+</div>
+
+<label>Notes (Optional)</label>
+<input id="notes" placeholder="e.g. Facing the top team, injuries, weather" />
+
+<label>Paste Your Roster JSON</label>
+<textarea id="roster" rows="10" placeholder='{
+  "QB": ["Kirk Cousins", "Brock Purdy"],
+  "RB": ["Najee Harris", "James Conner"],
+  "WR": ["Tyreek Hill", "Mike Evans"],
+  "TE": ["Sam LaPorta"],
+  "FLEX": ["Javonte Williams"],
+  "BENCH": ["Elijah Moore", "Zamir White", "Michael Mayer"]
+}'></textarea>
+
+<div class="button-row">
+  <button onclick="loadSampleRoster('ppr')">📋 Load PPR Roster</button>
+  <button onclick="loadSampleRoster('2qb')">📋 Load 2QB Roster</button>
+  <button onclick="loadSampleRoster('random')">🎲 Random Roster</button>
+  <button onclick="clearRoster()">🧹 Clear Roster</button>
+</div>
+
+<button style="margin-top: 20px;" onclick="getAdvice()">🔍 Get Lineup Advice</button>
+
 
   <h2>📋 Advice</h2>
   <div id="output" class="output">Waiting...</div>
