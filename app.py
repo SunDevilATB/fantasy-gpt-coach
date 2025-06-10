@@ -116,26 +116,34 @@ def current_week():
     return jsonify({"week": get_current_nfl_week()})
 
 
+import json
+
 @app.route("/recommend", methods=["POST"])
 def recommend():
     try:
         data = request.get_json()
-        stats = get_player_stats()  # Uses auto-detected week
-        prompt = build_prompt(data, stats)
+        stats = get_player_stats()  # if you have this logic
+        prompt = build_prompt(data, stats)  # or just format from `data`
 
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": "You are a fantasy football expert. Reply ONLY in JSON."},
+                {"role": "user", "content": prompt}
+            ],
             temperature=0.7
         )
 
-        advice = response.choices[0].message.content
+        # GPT returns a JSON string, not a dict — parse it
+        advice_raw = response.choices[0].message.content.strip()
+        advice = json.loads(advice_raw)
 
-
-        return jsonify({"advice": advice})
+        return jsonify(advice)
 
     except Exception as e:
+        print("Error in /recommend:", e)
         return jsonify({"error": str(e)}), 500
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
