@@ -67,6 +67,12 @@
 
   <script>
     async function getAdvice() {
+  const out = document.getElementById("output");
+  const format = document.getElementById("format").value;
+  const customFormat = document.getElementById("custom-format").value;
+  const notes = document.getElementById("notes").value;
+  const rosterInput = document.getElementById("roster").value;
+  let roster;
       const res = await fetch("/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,7 +91,7 @@
       });
 
       const data = await res.json();
-      const out = document.getElementById("output");
+    
 
       if (data.error) {
         out.innerHTML = "⚠️ " + data.error;
