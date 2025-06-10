@@ -4,163 +4,148 @@
   <title>Fantasy Football GPT Coach</title>
   <meta charset="UTF-8" />
   <style>
-  body {
-    font-family: system-ui, sans-serif;
-    background: #f5f7fa;
-    color: #222;
-    max-width: 900px;
-    margin: auto;
-    padding: 30px 20px;
-  }
-
-  h1 {
-    font-size: 32px;
-    margin-bottom: 20px;
-    color: #202124;
-  }
-
-  label {
-    margin-top: 20px;
-    font-weight: 600;
-    display: block;
-  }
-
-  input, select, textarea {
-    width: 100%;
-    padding: 12px;
-    margin-top: 6px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-family: inherit;
-  }
-
-  textarea {
-    font-family: monospace;
-  }
-
-  button {
-    font-size: 16px;
-    padding: 10px 14px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    font-weight: 500;
-  }
-
-  .button-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 14px;
-  }
-
-  .button-row button {
-    background-color: #444;
-    color: white;
-  }
-
-  .button-row button:hover {
-    background-color: #222;
-  }
-
-  h2 {
-    margin-top: 40px;
-    font-size: 24px;
-    border-bottom: 2px solid #ddd;
-    padding-bottom: 6px;
-  }
-
-  h3 {
-    margin-top: 24px;
-    font-size: 20px;
-    color: #333;
-  }
-
-  .output {
-    background: #fff;
-    border: 1px solid #ddd;
-    padding: 16px;
-    border-radius: 8px;
-    margin-top: 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  }
-
-  .pos {
-    font-weight: 600;
-    margin-top: 10px;
-    color: #202124;
-  }
-
-  ul {
-    padding-left: 20px;
-    margin-top: 5px;
-  }
-
-  pre {
-    background: #eee;
-    padding: 12px;
-    border-radius: 6px;
-    overflow-x: auto;
-  }
-
-  @media (max-width: 600px) {
     body {
-      padding: 20px 10px;
+      font-family: system-ui, sans-serif;
+      background: #f5f7fa;
+      color: #222;
+      max-width: 900px;
+      margin: auto;
+      padding: 30px 20px;
     }
 
-    .button-row {
-      flex-direction: column;
+    h1 {
+      font-size: 32px;
+      margin-bottom: 20px;
+      color: #202124;
+    }
+
+    label {
+      margin-top: 20px;
+      font-weight: 600;
+      display: block;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: inherit;
+    }
+
+    textarea {
+      font-family: monospace;
     }
 
     button {
-      width: 100%;
+      font-size: 16px;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      font-weight: 500;
     }
-  }
-  
-  .section-header {
-  display: flex;
-  align-items: center;
-  font-size: 18px;
-  margin-top: 24px;
-  color: #1a1a1a;
-}
 
-.section-header span {
-  margin-right: 8px;
-  font-size: 22px;
-}
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
 
-.pos {
-  font-weight: 600;
-  margin: 10px 0 5px;
-  color: #555;
-  text-transform: uppercase;
-  font-size: 14px;
-}
+    .button-row button {
+      background-color: #444;
+      color: white;
+    }
 
-ul li {
-  margin-left: 10px;
-  padding-left: 6px;
-  border-left: 3px solid #ccc;
-  margin-bottom: 5px;
-}
+    .button-row button:hover {
+      background-color: #222;
+    }
 
-ul.recommended li { border-color: #4CAF50; }   /* green */
-ul.bench li { border-color: #F44336; }         /* red */
-ul.waiver li { border-color: #FF9800; }        /* orange */
+    h2 {
+      margin-top: 40px;
+      font-size: 24px;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 6px;
+    }
 
-p.strategy {
-  background: #e0f7fa;
-  padding: 12px;
-  border-left: 5px solid #00acc1;
-  font-style: italic;
-  border-radius: 6px;
-}
+    h3 {
+      margin-top: 24px;
+      font-size: 20px;
+      color: #333;
+    }
 
-</style>
+    .output {
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
 
+    .section-header {
+      display: flex;
+      align-items: center;
+      font-size: 18px;
+      margin-top: 24px;
+      color: #1a1a1a;
+    }
+
+    .section-header span {
+      margin-right: 8px;
+      font-size: 22px;
+    }
+
+    .pos {
+      font-weight: 600;
+      margin: 10px 0 5px;
+      color: #555;
+      text-transform: uppercase;
+      font-size: 14px;
+    }
+
+    ul {
+      padding-left: 20px;
+      margin-top: 5px;
+    }
+
+    ul li {
+      margin-left: 10px;
+      padding-left: 6px;
+      border-left: 3px solid #ccc;
+      margin-bottom: 5px;
+    }
+
+    ul.recommended li { border-color: #4CAF50; }
+    ul.bench li { border-color: #F44336; }
+    ul.waiver li { border-color: #FF9800; }
+
+    p.strategy {
+      background: #e0f7fa;
+      padding: 12px;
+      border-left: 5px solid #00acc1;
+      font-style: italic;
+      border-radius: 6px;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 20px 10px;
+      }
+
+      .button-row {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
   <h1>🏈 Fantasy GPT Coach</h1>
@@ -194,21 +179,19 @@ p.strategy {
   "BENCH": ["Elijah Moore", "Zamir White", "Michael Mayer"]
 }'></textarea>
 
-<div class="button-row">
-  <button onclick="loadSampleRoster('ppr')">📋 Load PPR Roster</button>
-  <button onclick="loadSampleRoster('2qb')">📋 Load 2QB Roster</button>
-  <button onclick="loadSampleRoster('random')">🎲 Random Roster</button>
-  <button onclick="clearRoster()">🧹 Clear Roster</button>
-    <button onclick="loadSampleRoster()">📋 Load Sample Roster</button>	
-  <button onclick="getAdvice()">🔍 Get Lineup Advice</button>
-</div>
+  <div class="button-row">
+    <button onclick="loadSampleRoster('ppr')">📋 Load PPR Roster</button>
+    <button onclick="loadSampleRoster('2qb')">📋 Load 2QB Roster</button>
+    <button onclick="loadSampleRoster('random')">🎲 Random Roster</button>
+    <button onclick="clearRoster()">🧹 Clear Roster</button>
+  </div>
 
+  <button style="margin-top: 20px;" onclick="getAdvice()">🔍 Get Lineup Advice</button>
 
   <h2>📋 Advice</h2>
   <div id="output" class="output">Waiting...</div>
 
   <script>
-    // Load saved format on page load
     window.onload = () => {
       const savedFormat = localStorage.getItem("last_format");
       if (savedFormat) {
@@ -219,7 +202,6 @@ p.strategy {
       }
     };
 
-    // Show custom format input conditionally
     document.getElementById("format").addEventListener("change", function () {
       const selected = this.value;
       const wrapper = document.getElementById("custom-format-wrapper");
@@ -228,6 +210,34 @@ p.strategy {
 
     function saveFormat(format) {
       localStorage.setItem("last_format", format);
+    }
+
+    function loadSampleRoster(type) {
+      const ppr = {
+        "QB": ["Kirk Cousins", "Brock Purdy"],
+        "RB": ["Bijan Robinson", "Travis Etienne"],
+        "WR": ["Tyreek Hill", "CeeDee Lamb"],
+        "TE": ["Sam LaPorta"],
+        "FLEX": ["Christian Kirk"],
+        "BENCH": ["Najee Harris", "Gabe Davis", "Evan Engram"]
+      };
+
+      const qb2 = {
+        "QB": ["Tua Tagovailoa", "Jordan Love", "Jimmy Garoppolo"],
+        "RB": ["Josh Jacobs", "Tony Pollard"],
+        "WR": ["Keenan Allen", "Chris Olave"],
+        "TE": ["David Njoku"],
+        "FLEX": ["Zay Flowers"],
+        "BENCH": ["Brian Robinson Jr.", "Dalton Kincaid"]
+      };
+
+      const randoms = [ppr, qb2];
+      let sample = type === "ppr" ? ppr : type === "2qb" ? qb2 : randoms[Math.floor(Math.random() * randoms.length)];
+      document.getElementById("roster").value = JSON.stringify(sample, null, 2);
+    }
+
+    function clearRoster() {
+      document.getElementById("roster").value = "";
     }
 
     async function getAdvice() {
@@ -276,72 +286,26 @@ p.strategy {
 
       let html = "";
 
-html += `<div class="section-header"><span>✅</span><h3>Recommended Starters</h3></div>`;
-for (const [pos, players] of Object.entries(data.recommended_starters || {})) {
-  html += `<div class="pos">${pos}</div><ul class="recommended">`;
-  players.forEach(p => html += `<li>${p}</li>`);
-  html += "</ul>";
-}
+      html += `<div class="section-header"><span>✅</span><h3>Recommended Starters</h3></div>`;
+      for (const [pos, players] of Object.entries(data.recommended_starters || {})) {
+        html += `<div class="pos">${pos}</div><ul class="recommended">`;
+        players.forEach(p => html += `<li>${p}</li>`);
+        html += "</ul>";
+      }
 
-html += `<div class="section-header"><span>🚩</span><h3>Bench Suggestions</h3></div><ul class="bench">`;
-(data.bench || []).forEach(p => html += `<li>${p}</li>`);
-html += "</ul>";
+      html += `<div class="section-header"><span>🚩</span><h3>Bench Suggestions</h3></div><ul class="bench">`;
+      (data.bench || []).forEach(p => html += `<li>${p}</li>`);
+      html += "</ul>";
 
-html += `<div class="section-header"><span>👀</span><h3>Waiver Watchlist</h3></div><ul class="waiver">`;
-(data.waiver_watchlist || []).forEach(p => html += `<li>${p}</li>`);
-html += "</ul>";
+      html += `<div class="section-header"><span>👀</span><h3>Waiver Watchlist</h3></div><ul class="waiver">`;
+      (data.waiver_watchlist || []).forEach(p => html += `<li>${p}</li>`);
+      html += "</ul>";
 
-html += `<div class="section-header"><span>🧠</span><h3>Strategy Summary</h3></div>`;
-html += `<p class="strategy">${data.strategy_summary || "No summary provided."}</p>`;
-
+      html += `<div class="section-header"><span>🧠</span><h3>Strategy Summary</h3></div>`;
+      html += `<p class="strategy">${data.strategy_summary || "No summary provided."}</p>`;
 
       out.innerHTML = html;
     }
-
-  function loadSampleRoster() {
-    const sample = {
-      "QB": ["Kirk Cousins", "Brock Purdy"],
-      "RB": ["Bijan Robinson", "Travis Etienne"],
-      "WR": ["Tyreek Hill", "CeeDee Lamb"],
-      "TE": ["Sam LaPorta"],
-      "FLEX": ["Christian Kirk"],
-      "BENCH": ["Najee Harris", "Gabe Davis", "Evan Engram"]
-    };
-    document.getElementById("roster").value = JSON.stringify(sample, null, 2);
-  }
-	function loadSampleRoster(type) {
-  const ppr = {
-    "QB": ["Kirk Cousins", "Brock Purdy"],
-    "RB": ["Bijan Robinson", "Travis Etienne"],
-    "WR": ["Tyreek Hill", "CeeDee Lamb"],
-    "TE": ["Sam LaPorta"],
-    "FLEX": ["Christian Kirk"],
-    "BENCH": ["Najee Harris", "Gabe Davis", "Evan Engram"]
-  };
-
-  const qb2 = {
-    "QB": ["Tua Tagovailoa", "Jordan Love", "Jimmy Garoppolo"],
-    "RB": ["Josh Jacobs", "Tony Pollard"],
-    "WR": ["Keenan Allen", "Chris Olave"],
-    "TE": ["David Njoku"],
-    "FLEX": ["Zay Flowers"],
-    "BENCH": ["Brian Robinson Jr.", "Dalton Kincaid"]
-  };
-
-  const randoms = [ppr, qb2];
-
-  let sample;
-  if (type === "ppr") sample = ppr;
-  else if (type === "2qb") sample = qb2;
-  else sample = randoms[Math.floor(Math.random() * randoms.length)];
-
-  document.getElementById("roster").value = JSON.stringify(sample, null, 2);
-}
-
-function clearRoster() {
-  document.getElementById("roster").value = "";
-}
-
   </script>
 </body>
 </html>
