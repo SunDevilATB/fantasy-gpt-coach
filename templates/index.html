@@ -44,6 +44,12 @@
   "FLEX": ["Javonte Williams"],
   "BENCH": ["Elijah Moore", "Zamir White", "Michael Mayer"]
 }'></textarea>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+  <button onclick="loadSampleRoster('ppr')">📋 Load PPR Roster</button>
+  <button onclick="loadSampleRoster('2qb')">📋 Load 2QB Roster</button>
+  <button onclick="loadSampleRoster('random')">🎲 Random Roster</button>
+  <button onclick="clearRoster()">🧹 Clear Roster</button>
+</div>
   <button onclick="loadSampleRoster()">📋 Load Sample Roster</button>	
   <button onclick="getAdvice()">🔍 Get Lineup Advice</button>
 
@@ -151,7 +157,38 @@
     };
     document.getElementById("roster").value = JSON.stringify(sample, null, 2);
   }
+	function loadSampleRoster(type) {
+  const ppr = {
+    "QB": ["Kirk Cousins", "Brock Purdy"],
+    "RB": ["Bijan Robinson", "Travis Etienne"],
+    "WR": ["Tyreek Hill", "CeeDee Lamb"],
+    "TE": ["Sam LaPorta"],
+    "FLEX": ["Christian Kirk"],
+    "BENCH": ["Najee Harris", "Gabe Davis", "Evan Engram"]
+  };
 
+  const qb2 = {
+    "QB": ["Tua Tagovailoa", "Jordan Love", "Jimmy Garoppolo"],
+    "RB": ["Josh Jacobs", "Tony Pollard"],
+    "WR": ["Keenan Allen", "Chris Olave"],
+    "TE": ["David Njoku"],
+    "FLEX": ["Zay Flowers"],
+    "BENCH": ["Brian Robinson Jr.", "Dalton Kincaid"]
+  };
+
+  const randoms = [ppr, qb2];
+
+  let sample;
+  if (type === "ppr") sample = ppr;
+  else if (type === "2qb") sample = qb2;
+  else sample = randoms[Math.floor(Math.random() * randoms.length)];
+
+  document.getElementById("roster").value = JSON.stringify(sample, null, 2);
+}
+
+function clearRoster() {
+  document.getElementById("roster").value = "";
+}
 
   </script>
 </body>
