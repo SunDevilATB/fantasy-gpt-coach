@@ -1,10 +1,11 @@
 import os
 import json
 from flask import Flask, request, jsonify, send_from_directory
-import openai
+from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 app = Flask(__name__, static_folder="static", static_url_path="")
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
@@ -34,12 +35,14 @@ def recommend():
             "}"
         )
 
-        response = openai.ChatCompletion.create(
+        messages: list[ChatCompletionMessageParam] = [
+            {"role": "system", "content": "You are a helpful fantasy football expert. Respond only in valid JSON."},
+            {"role": "user", "content": prompt}
+        ]
+
+        response = client.chat.completions.create(
             model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a helpful fantasy football expert. Respond in JSON only."},
-                {"role": "user", "content": prompt}
-            ],
+            messages=messages,
             temperature=0.7
         )
 
@@ -48,10 +51,8 @@ def recommend():
         return jsonify(advice)
 
     except json.JSONDecodeError:
-        print("⚠️ GPT returned invalid JSON.")
-        return jsonify({"error": "Invalid JSON returned from GPT"}), 500
+        return jsonify({"error": "GPT returned invalid JSON"}), 500
     except Exception as e:
-        print("❌ Error:", e)
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
