@@ -222,8 +222,10 @@
     <button onclick="clearRoster()">🧹 Clear Roster</button>
   </div>
   <button style="margin-top: 20px;" onclick="getAdvice()">🔍 Get Lineup Advice</button>
+  <button id="challenge-btn" style="margin-top: 10px; display:none; background:#e53935; color:#fff;" onclick="challengeCoach()">🗣 Challenge the Coach</button>
   <h2>📋 Advice</h2>
   <div id="output" class="output">Waiting...</div>
+  <div id="rebuttal" class="output" style="margin-top: 20px; display: none;"></div>
   <p id="week-label" style="font-size: 14px; color: #555; margin-top: 6px;"></p>
   <script>
     document.getElementById("format").addEventListener("change", function () {
@@ -303,9 +305,49 @@
       html += `<p class="strategy">${data.strategy_summary || "No summary provided."}</p>`;
       out.innerHTML = html;
       out.style.opacity = 1;
+      document.getElementById("challenge-btn").style.display = "inline-block";
+      document.getElementById("rebuttal").style.display = "none";
       out.style.transform = 'translateY(0)';
     }
     
+  async function challengeCoach() {
+      const rebuttalBox = document.getElementById("rebuttal");
+      const format = document.getElementById("format").value;
+      const fullFormat = format === "Custom" ? `Custom: ${document.getElementById("custom-format").value}` : format;
+      rebuttalBox.style.display = "block";
+      rebuttalBox.innerHTML = "😤 Coach is preparing a rant...";
+
+      const outputHtml = document.getElementById("output").innerHTML;
+      const starters = Array.from(document.querySelectorAll(".recommended li")).map(el => el.textContent);
+      const bench = Array.from(document.querySelectorAll(".bench li")).map(el => el.textContent);
+      const waiver = Array.from(document.querySelectorAll(".waiver li")).map(el => el.textContent);
+      const summary = document.querySelector("p.strategy").textContent;
+
+      const advice = {
+        recommended_starters: {},
+        bench: bench,
+        waiver_watchlist: waiver,
+        strategy_summary: summary
+      };
+      document.querySelectorAll(".pos").forEach(pos => {
+        const posName = pos.textContent;
+        const list = pos.nextElementSibling;
+        const players = Array.from(list.querySelectorAll("li")).map(li => li.textContent);
+        advice.recommended_starters[posName] = players;
+      });
+
+      const res = await fetch("/challenge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ advice, scoring_format: fullFormat })
+      });
+      const data = await res.json();
+      if (data.error) {
+        rebuttalBox.innerHTML = "⚠️ " + data.error;
+        return;
+      }
+      rebuttalBox.innerHTML = `<p style='font-style: italic;'>🗯️ ${data.rebuttal}</p>`;
+    }
   </script>
   </div>
 </body>
