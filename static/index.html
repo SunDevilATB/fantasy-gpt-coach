@@ -78,9 +78,10 @@
     }
     h2 {
       margin-top: 40px;
-      font-size: 24px;
+      font-size: 26px;
+      font-weight: 700;
       border-bottom: 2px solid #ddd;
-      padding-bottom: 6px;
+      padding-bottom: 8px;
     }
     .output {
       background: #fff;
@@ -93,8 +94,8 @@
     .section-header {
       display: flex;
       align-items: center;
-      font-size: 18px;
-      margin-top: 24px;
+      font-size: 20px;
+      margin-top: 28px;
       color: #1a1a1a;
     }
     .section-header span {
@@ -102,11 +103,11 @@
       font-size: 22px;
     }
     .pos {
-      font-weight: 600;
-      margin: 10px 0 5px;
-      color: #555;
+      font-weight: 700;
+      margin: 12px 0 6px;
+      color: #444;
       text-transform: uppercase;
-      font-size: 14px;
+      font-size: 15px;
     }
     ul {
       padding-left: 20px;
@@ -115,12 +116,30 @@
     ul li {
       margin-left: 10px;
       padding-left: 6px;
+      padding-top: 4px;
+      padding-bottom: 4px;
       border-left: 3px solid #ccc;
       margin-bottom: 5px;
+      transition: background 0.2s ease;
     }
-    ul.recommended li { border-color: #4CAF50; background: #f0fff0; padding: 6px; border-radius: 4px; }
-    ul.bench li { border-color: #F44336; background: #fff0f0; padding: 6px; border-radius: 4px; }
-    ul.waiver li { border-color: #FF9800; background: #fff8e1; padding: 6px; border-radius: 4px; }
+    ul.recommended li {
+      border-color: #4CAF50;
+      background: #f0fff0;
+      padding: 6px;
+      border-radius: 4px;
+    }
+    ul.bench li {
+      border-color: #F44336;
+      background: #fff0f0;
+      padding: 6px;
+      border-radius: 4px;
+    }
+    ul.waiver li {
+      border-color: #FF9800;
+      background: #fff8e1;
+      padding: 6px;
+      border-radius: 4px;
+    }
     p.strategy {
       background: #e8f4f8;
       padding: 16px;
@@ -149,7 +168,7 @@
     body.dark textarea,
     body.dark .output {
       background: #2c2c2c;
-      color: #e0e0e0;
+      color: #f0f0f0;
       border-color: #555;
     }
     body.dark h1,
@@ -159,6 +178,7 @@
     body.dark .pos,
     body.dark ul li {
       color: #f0f0f0;
+      background: #333;
     }
     body.dark p.strategy {
       background: #1a2b3c;
