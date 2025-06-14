@@ -14,7 +14,48 @@ def serve_ui(path):
         return send_from_directory(app.static_folder, path)
     return send_from_directory(app.static_folder, "index.html")
 
-@app.route("/recommend", methods=["POST"])
+@app.route("/challenge", methods=["POST"])
+def challenge():
+    try:
+        data = request.get_json()
+        advice_json = data.get("advice")
+        format = data.get("scoring_format", "PPR")
+
+        if not advice_json:
+            return jsonify({"error": "No advice provided to challenge."}), 400
+
+        prompt = f"""
+You are a grizzled, slightly arrogant fantasy football coach who’s being challenged by a cocky fantasy player.
+They want to know **why** you recommended this lineup.
+
+League Format: {format}
+
+Here’s what you recommended:
+{json.dumps(advice_json, indent=2)}
+
+Defend your decisions with attitude. Justify your reasoning.
+Speak directly to the player like you're annoyed they even asked.
+
+Return ONLY your rebuttal as a paragraph of text. No JSON.
+"""
+
+        messages = [
+            {"role": "system", "content": "You are a proud and blunt fantasy football coach defending your lineup recommendations."},
+            {"role": "user", "content": prompt}
+        ]
+
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.9
+        )
+
+        rebuttal = response.choices[0].message.content.strip()
+        return jsonify({"rebuttal": rebuttal})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/recommend", methods=["POST"])
 def recommend():
     try:
