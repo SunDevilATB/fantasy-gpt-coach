@@ -15,6 +15,7 @@ def serve_ui(path):
     return send_from_directory(app.static_folder, "index.html")
 
 @app.route("/recommend", methods=["POST"])
+@app.route("/recommend", methods=["POST"])
 def recommend():
     try:
         data = request.get_json()
@@ -22,21 +23,39 @@ def recommend():
         notes = data.get("notes", "")
         roster = data.get("roster", {})
 
-        prompt = (
-            f"You are a fantasy football assistant. Based on this scoring format: '{scoring_format}', "
-            f"and these notes: '{notes}', give me lineup advice. "
-            f"Here is the user's roster:\n{json.dumps(roster, indent=2)}\n\n"
-            "Respond ONLY in valid JSON like this:\n"
-            "{\n"
-            "  \"recommended_starters\": { \"QB\": [\"...\"], \"RB\": [\"...\"], ... },\n"
-            "  \"bench\": [\"...\"],\n"
-            "  \"waiver_watchlist\": [\"...\"],\n"
-            "  \"strategy_summary\": \"...\"\n"
-            "}"
-        )
+        prompt = f"""
+You are a sharp, opinionated fantasy football coach. Your job is to select the optimal starting lineup
+based on the user's current roster, league format, and strategic considerations.
 
-        messages: list[ChatCompletionMessageParam] = [
-            {"role": "system", "content": "You are a helpful fantasy football expert. Respond only in valid JSON."},
+League Format: {scoring_format}
+Custom Notes: {notes or "None provided"}
+
+Here is the user's full roster:
+{json.dumps(roster, indent=2)}
+
+Instructions:
+- Identify the strongest possible starting lineup for this week.
+- Clearly separate players into: recommended_starters, bench, and waiver_watchlist.
+- Prioritize upside for FLEX positions and matchups for borderline players.
+- Include a brief strategy_summary that explains your reasoning, especially any risky calls.
+
+Respond ONLY in valid JSON like this:
+{{
+  "recommended_starters": {{
+    "QB": ["..."],
+    "RB": ["..."],
+    "WR": ["..."],
+    "TE": ["..."],
+    "FLEX": ["..."]
+  }},
+  "bench": ["..."],
+  "waiver_watchlist": ["..."],
+  "strategy_summary": "..."
+}}
+"""
+
+        messages = [
+            {"role": "system", "content": "You are a fantasy football expert. Only return valid JSON with no extra explanation."},
             {"role": "user", "content": prompt}
         ]
 
@@ -54,6 +73,7 @@ def recommend():
         return jsonify({"error": "GPT returned invalid JSON"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
