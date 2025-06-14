@@ -1,20 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <title>Fantasy Football GPT Coach</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="https://fav.farm/🏈" />
   <style>
     body {
-      font-family: system-ui, sans-serif;
-      background: #f5f7fa;
-      color: #222;
-      max-width: 900px;
-      margin: auto;
-      padding: 30px 20px;
-      transition: background 0.3s ease, color 0.3s ease;
-    }
+      font-family: 'Inter', system-ui, sans-serif;}
     #theme-toggle {
       position: fixed;
       top: 20px;
@@ -36,6 +30,8 @@
       font-size: 32px;
       margin-bottom: 20px;
       color: #202124;
+      font-weight: 700;
+      letter-spacing: -0.5px;
     }
     label {
       margin-top: 20px;
@@ -90,6 +86,9 @@
       border-radius: 8px;
       margin-top: 20px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.4s ease;
     }
     .section-header {
       display: flex;
@@ -152,7 +151,17 @@
     @media (max-width: 600px) {
       .button-row {
         flex-direction: column;
+        margin-bottom: 10px;
       }
+      button {
+        width: 100%;
+        font-size: 16px;
+        padding: 12px;
+      }
+      .output {
+        font-size: 15px;
+      }
+    }
       button {
         width: 100%;
         font-size: 16px;
@@ -302,6 +311,8 @@
       html += `<div class="section-header"><span>🧠</span><h3>Strategy Summary</h3></div>`;
       html += `<p class="strategy">${data.strategy_summary || "No summary provided."}</p>`;
       out.innerHTML = html;
+      out.style.opacity = 1;
+      out.style.transform = 'translateY(0)';
     }
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark") document.body.classList.add("dark");
