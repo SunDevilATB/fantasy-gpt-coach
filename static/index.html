@@ -348,6 +348,51 @@
       }
       rebuttalBox.innerHTML = `<p style='font-style: italic;'>🗯️ ${data.rebuttal}</p>`;
     }
+	
+	async function challengeCoach() {
+  const rebuttalBox = document.getElementById("rebuttal");
+  const format = document.getElementById("format").value;
+  const fullFormat = format === "Custom" ? `Custom: ${document.getElementById("custom-format").value}` : format;
+
+  rebuttalBox.style.display = "block";
+  rebuttalBox.innerHTML = "😤 Coach is preparing a rant...";
+
+  const starters = {};
+  document.querySelectorAll(".recommended").forEach((ul) => {
+    const pos = ul.previousElementSibling?.textContent?.trim();
+    const players = Array.from(ul.querySelectorAll("li")).map(li => li.textContent);
+    if (pos) starters[pos] = players;
+  });
+
+  const bench = Array.from(document.querySelectorAll(".bench li")).map(el => el.textContent);
+  const waiver = Array.from(document.querySelectorAll(".waiver li")).map(el => el.textContent);
+  const summaryElem = document.querySelector("p.strategy");
+  const summary = summaryElem ? summaryElem.textContent.trim() : "No summary provided.";
+
+  const advice = {
+    recommended_starters: starters,
+    bench: bench,
+    waiver_watchlist: waiver,
+    strategy_summary: summary
+  };
+
+  try {
+    const res = await fetch("/challenge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ advice, scoring_format: fullFormat })
+    });
+    const data = await res.json();
+    if (data.error) {
+      rebuttalBox.innerHTML = "⚠️ " + data.error;
+    } else {
+      rebuttalBox.innerHTML = `<p style='font-style: italic;'>🗯️ ${data.rebuttal}</p>`;
+    }
+  } catch (err) {
+    rebuttalBox.innerHTML = "❌ Failed to reach server.";
+  }
+}
+
   </script>
   </div>
 </body>
