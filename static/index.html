@@ -349,7 +349,7 @@
       rebuttalBox.innerHTML = `<p style='font-style: italic;'>🗯️ ${data.rebuttal}</p>`;
     }
 	
-	async function challengeCoach() {
+async function challengeCoach() {
   const rebuttalBox = document.getElementById("rebuttal");
   const format = document.getElementById("format").value;
   const fullFormat = format === "Custom" ? `Custom: ${document.getElementById("custom-format").value}` : format;
@@ -358,20 +358,22 @@
   rebuttalBox.innerHTML = "😤 Coach is preparing a rant...";
 
   const starters = {};
-  document.querySelectorAll(".recommended").forEach((ul) => {
+  const sections = document.querySelectorAll(".recommended");
+
+  sections.forEach(ul => {
     const pos = ul.previousElementSibling?.textContent?.trim();
-    const players = Array.from(ul.querySelectorAll("li")).map(li => li.textContent);
-    if (pos) starters[pos] = players;
+    if (pos) {
+      starters[pos] = Array.from(ul.querySelectorAll("li")).map(li => li.textContent);
+    }
   });
 
-  const bench = Array.from(document.querySelectorAll(".bench li")).map(el => el.textContent);
-  const waiver = Array.from(document.querySelectorAll(".waiver li")).map(el => el.textContent);
-  const summaryElem = document.querySelector("p.strategy");
-  const summary = summaryElem ? summaryElem.textContent.trim() : "No summary provided.";
+  const bench = Array.from(document.querySelectorAll(".bench li")).map(li => li.textContent);
+  const waiver = Array.from(document.querySelectorAll(".waiver li")).map(li => li.textContent);
+  const summary = document.querySelector("p.strategy")?.textContent?.trim() || "No summary provided.";
 
   const advice = {
     recommended_starters: starters,
-    bench: bench,
+    bench,
     waiver_watchlist: waiver,
     strategy_summary: summary
   };
@@ -382,6 +384,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ advice, scoring_format: fullFormat })
     });
+
     const data = await res.json();
     if (data.error) {
       rebuttalBox.innerHTML = "⚠️ " + data.error;
@@ -389,9 +392,10 @@
       rebuttalBox.innerHTML = `<p style='font-style: italic;'>🗯️ ${data.rebuttal}</p>`;
     }
   } catch (err) {
-    rebuttalBox.innerHTML = "❌ Failed to reach server.";
+    rebuttalBox.innerHTML = "❌ Failed to contact the coach.";
   }
 }
+
 
   </script>
   </div>
