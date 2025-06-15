@@ -222,7 +222,12 @@
     <button onclick="clearRoster()">🧹 Clear Roster</button>
   </div>
   <button style="margin-top: 20px;" onclick="getAdvice()">🔍 Get Lineup Advice</button>
-  <button id="challenge-btn" style="margin-top: 10px; display:none; background:#e53935; color:#fff;" onclick="challengeCoach()">🗣 Challenge the Coach</button>
+  <div id="challenge-area" style="margin-top: 20px; display:none;">
+  <label>Challenge the Coach</label>
+  <textarea id="userChallenge" rows="2" placeholder="Ask the coach why they benched your favorite player..."></textarea>
+  <button style="margin-top: 6px; background:#e53935; color:white;" onclick="challengeCoach()">🗣 Submit Challenge</button>
+</div>
+
   <h2>📋 Advice</h2>
   <div id="output" class="output">Waiting...</div>
   <div id="rebuttal" class="output" style="margin-top: 20px; display: none;"></div>
