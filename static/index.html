@@ -310,23 +310,25 @@
       html += `<p class="strategy">${data.strategy_summary || "No summary provided."}</p>`;
       out.innerHTML = html;
       out.style.opacity = 1;
-      document.getElementById("challenge-btn").style.display = "inline-block";
+      document.getElementById("challenge-area").style.display = "block";
       document.getElementById("rebuttal").style.display = "none";
       out.style.transform = 'translateY(0)';
     }
     
 
 async function challengeCoach() {
-  console.log("ℹ️ challengeCoach() called");
   const rebuttalBox = document.getElementById("rebuttal");
+  const userPrompt = document.getElementById("userChallenge").value.trim();
+  if (!userPrompt) {
+    alert("Please enter a challenge for the coach.");
+    return;
+  }
+
   const format = document.getElementById("format").value;
   const fullFormat = format === "Custom" ? `Custom: ${document.getElementById("custom-format").value}` : format;
-
   rebuttalBox.style.display = "block";
   rebuttalBox.innerHTML = "😤 Coach is preparing a rant...";
 
-  const starters = {};
-  const sections = document.querySelectorAll(".recommended");
 
   sections.forEach(ul => {
     const pos = ul.previousElementSibling?.textContent?.trim();
@@ -351,7 +353,7 @@ async function challengeCoach() {
     const res = await fetch("/challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ advice, scoring_format: fullFormat })
+      body: JSON.stringify({ advice, scoring_format: fullFormat, user_challenge: userPrompt })
     });
 	console.log("Server response:", data);
 	
