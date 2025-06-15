@@ -332,6 +332,7 @@ async function challengeCoach() {
 
   rebuttalBox.style.display = "block";
   rebuttalBox.innerHTML = "😤 Coach is preparing a response...";
+  
 
   // Reconstruct the original advice from the DOM
   const starters = {};
@@ -373,6 +374,8 @@ async function challengeCoach() {
       rebuttalBox.innerHTML = "⚠️ " + data.error;
     } else {
       rebuttalBox.innerHTML = `<p style='font-style: italic;'>🗯️ ${data.rebuttal}</p>`;
+	  rebuttalBox.style.opacity = 1;
+	  rebuttalBox.style.transform = 'translateY(0)';
     }
   } catch (err) {
     rebuttalBox.innerHTML = "❌ Coach failed to respond.";
