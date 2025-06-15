@@ -310,45 +310,7 @@
       out.style.transform = 'translateY(0)';
     }
     
-  async function challengeCoach() {
-      const rebuttalBox = document.getElementById("rebuttal");
-      const format = document.getElementById("format").value;
-      const fullFormat = format === "Custom" ? `Custom: ${document.getElementById("custom-format").value}` : format;
-      rebuttalBox.style.display = "block";
-      rebuttalBox.innerHTML = "😤 Coach is preparing a rant...";
 
-      const outputHtml = document.getElementById("output").innerHTML;
-      const starters = Array.from(document.querySelectorAll(".recommended li")).map(el => el.textContent);
-      const bench = Array.from(document.querySelectorAll(".bench li")).map(el => el.textContent);
-      const waiver = Array.from(document.querySelectorAll(".waiver li")).map(el => el.textContent);
-      const summary = document.querySelector("p.strategy").textContent;
-
-      const advice = {
-        recommended_starters: {},
-        bench: bench,
-        waiver_watchlist: waiver,
-        strategy_summary: summary
-      };
-      document.querySelectorAll(".pos").forEach(pos => {
-        const posName = pos.textContent;
-        const list = pos.nextElementSibling;
-        const players = Array.from(list.querySelectorAll("li")).map(li => li.textContent);
-        advice.recommended_starters[posName] = players;
-      });
-
-      const res = await fetch("/challenge", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ advice, scoring_format: fullFormat })
-      });
-      const data = await res.json();
-      if (data.error) {
-        rebuttalBox.innerHTML = "⚠️ " + data.error;
-        return;
-      }
-      rebuttalBox.innerHTML = `<p style='font-style: italic;'>🗯️ ${data.rebuttal}</p>`;
-    }
-	
 async function challengeCoach() {
   const rebuttalBox = document.getElementById("rebuttal");
   const format = document.getElementById("format").value;
@@ -386,15 +348,14 @@ async function challengeCoach() {
     });
 
     const data = await res.json();
-    if (data.error) {
-      rebuttalBox.innerHTML = "⚠️ " + data.error;
-    } else {
-      rebuttalBox.innerHTML = `<p style='font-style: italic;'>🗯️ ${data.rebuttal}</p>`;
-    }
+    rebuttalBox.innerHTML = data.error
+      ? "⚠️ " + data.error
+      : `<p style='font-style: italic;'>🗯️ ${data.rebuttal}</p>`;
   } catch (err) {
     rebuttalBox.innerHTML = "❌ Failed to contact the coach.";
   }
 }
+
 
 
   </script>
