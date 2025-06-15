@@ -319,27 +319,35 @@
 async function challengeCoach() {
   const rebuttalBox = document.getElementById("rebuttal");
   const userPrompt = document.getElementById("userChallenge").value.trim();
+  
   if (!userPrompt) {
-    alert("Please enter a challenge for the coach.");
+    alert("⚠️ Please enter a question or challenge for the coach.");
     return;
   }
 
   const format = document.getElementById("format").value;
-  const fullFormat = format === "Custom" ? `Custom: ${document.getElementById("custom-format").value}` : format;
+  const fullFormat = format === "Custom" 
+    ? `Custom: ${document.getElementById("custom-format").value}` 
+    : format;
+
   rebuttalBox.style.display = "block";
-  rebuttalBox.innerHTML = "😤 Coach is preparing a rant...";
+  rebuttalBox.innerHTML = "😤 Coach is preparing a response...";
 
-
-  sections.forEach(ul => {
+  // Reconstruct the original advice from the DOM
+  const starters = {};
+  document.querySelectorAll(".recommended").forEach(ul => {
     const pos = ul.previousElementSibling?.textContent?.trim();
     if (pos) {
-      starters[pos] = Array.from(ul.querySelectorAll("li")).map(li => li.textContent);
+      starters[pos] = Array.from(ul.querySelectorAll("li"))
+        .map(li => li.textContent);
     }
   });
-
-  const bench = Array.from(document.querySelectorAll(".bench li")).map(li => li.textContent);
-  const waiver = Array.from(document.querySelectorAll(".waiver li")).map(li => li.textContent);
-  const summary = document.querySelector("p.strategy")?.textContent?.trim() || "No summary provided.";
+  const bench = Array.from(document.querySelectorAll(".bench li"))
+    .map(li => li.textContent);
+  const waiver = Array.from(document.querySelectorAll(".waiver li"))
+    .map(li => li.textContent);
+  const summary = document.querySelector("p.strategy")
+    ?.textContent?.trim() || "No summary provided.";
 
   const advice = {
     recommended_starters: starters,
@@ -348,24 +356,29 @@ async function challengeCoach() {
     strategy_summary: summary
   };
 
+  // Send both advice and user challenge text to backend
   try {
-    console.log("Sending advice:", JSON.stringify({ advice, scoring_format: fullFormat }, null, 2));
     const res = await fetch("/challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ advice, scoring_format: fullFormat, user_challenge: userPrompt })
+      body: JSON.stringify({
+        advice,
+        scoring_format: fullFormat,
+        user_challenge: userPrompt
+      })
     });
-	console.log("Server response:", data);
-	
-
     const data = await res.json();
-    rebuttalBox.innerHTML = data.error
-      ? "⚠️ " + data.error
-      : `<p style='font-style: italic;'>🗯️ ${data.rebuttal}</p>`;
+
+    if (data.error) {
+      rebuttalBox.innerHTML = "⚠️ " + data.error;
+    } else {
+      rebuttalBox.innerHTML = `<p style='font-style: italic;'>🗯️ ${data.rebuttal}</p>`;
+    }
   } catch (err) {
-    rebuttalBox.innerHTML = "❌ Failed to contact the coach.";
+    rebuttalBox.innerHTML = "❌ Coach failed to respond.";
   }
 }
+
 
 
 
