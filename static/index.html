@@ -200,6 +200,19 @@
       min-width: 0;
     }
 
+    .btn-group select {
+      background: var(--background-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-group select:focus {
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
     .position-card {
       background: var(--background-tertiary);
       border: 1px solid var(--border-color);
@@ -626,6 +639,10 @@
         flex-direction: column;
       }
       
+      .btn-group select {
+        order: -1; /* Put dropdown first on mobile */
+      }
+      
       .player-row {
         gap: 6px;
       }
@@ -669,6 +686,23 @@
 
     <div class="content">
       <div id="config-area">
+        <div class="section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">My Teams</h2>
+              <p class="section-subtitle">Save and manage multiple rosters</p>
+            </div>
+          </div>
+          
+          <div class="btn-group">
+            <select id="savedTeams" class="btn btn-secondary btn-small" style="flex: 2;">
+              <option value="">Select a saved team...</option>
+            </select>
+            <button class="btn btn-success btn-small" onclick="saveCurrentTeam()">💾 Save</button>
+            <button class="btn btn-error btn-small" onclick="deleteSelectedTeam()">🗑️ Delete</button>
+          </div>
+        </div>
+
         <div class="section">
           <div class="form-group">
             <label>League Format</label>
@@ -948,6 +982,165 @@
         BENCH: 8
       }
     };
+
+    // Team Management with localStorage
+    function getSavedTeams() {
+      try {
+        return JSON.parse(localStorage.getItem('fantasyGPTTeams') || '{}');
+      } catch (e) {
+        console.error('Error loading saved teams:', e);
+        return {};
+      }
+    }
+
+    function saveTeamsToStorage(teams) {
+      try {
+        localStorage.setItem('fantasyGPTTeams', JSON.stringify(teams));
+      } catch (e) {
+        console.error('Error saving teams:', e);
+        alert('Failed to save team. Storage may be full.');
+      }
+    }
+
+    function updateSavedTeamsDropdown() {
+      const dropdown = document.getElementById('savedTeams');
+      const savedTeams = getSavedTeams();
+      
+      // Clear existing options except the first one
+      dropdown.innerHTML = '<option value="">Select a saved team...</option>';
+      
+      // Add saved teams
+      Object.keys(savedTeams).forEach(teamName => {
+        const option = document.createElement('option');
+        option.value = teamName;
+        option.textContent = teamName;
+        dropdown.appendChild(option);
+      });
+    }
+
+    function saveCurrentTeam() {
+      // Check if roster has any players
+      const hasPlayers = Object.values(roster).some(position => 
+        position.some(player => player && player.trim() !== '')
+      );
+      
+      if (!hasPlayers) {
+        alert('⚠️ Please add some players before saving!');
+        return;
+      }
+
+      const teamName = prompt('Enter a name for this team:');
+      if (!teamName || !teamName.trim()) {
+        return;
+      }
+
+      const cleanedTeamName = teamName.trim();
+      const savedTeams = getSavedTeams();
+      
+      // Check if team name already exists
+      if (savedTeams[cleanedTeamName]) {
+        if (!confirm(`Team "${cleanedTeamName}" already exists. Overwrite?`)) {
+          return;
+        }
+      }
+
+      // Save current roster and format
+      const currentFormat = document.getElementById('format').value;
+      const customFormat = document.getElementById('custom-format').value;
+      
+      savedTeams[cleanedTeamName] = {
+        roster: JSON.parse(JSON.stringify(roster)),
+        format: currentFormat,
+        customFormat: customFormat,
+        savedAt: new Date().toISOString()
+      };
+
+      saveTeamsToStorage(savedTeams);
+      updateSavedTeamsDropdown();
+      
+      // Select the newly saved team
+      document.getElementById('savedTeams').value = cleanedTeamName;
+      
+      alert(`✅ Team "${cleanedTeamName}" saved successfully!`);
+    }
+
+    function loadSelectedTeam() {
+      const dropdown = document.getElementById('savedTeams');
+      const teamName = dropdown.value;
+      
+      if (!teamName) return;
+
+      const savedTeams = getSavedTeams();
+      const teamData = savedTeams[teamName];
+      
+      if (!teamData) {
+        alert('⚠️ Team not found!');
+        updateSavedTeamsDropdown();
+        return;
+      }
+
+      try {
+        // Load roster
+        roster = JSON.parse(JSON.stringify(teamData.roster));
+        
+        // Load format
+        document.getElementById('format').value = teamData.format || 'PPR';
+        if (teamData.customFormat) {
+          document.getElementById('custom-format').value = teamData.customFormat;
+        }
+        
+        // Update position limits and render
+        updatePositionLimits();
+        renderRosterBuilder();
+        
+        // Show success message with timestamp
+        const savedDate = new Date(teamData.savedAt).toLocaleDateString();
+        
+        // Brief visual feedback
+        const dropdown = document.getElementById('savedTeams');
+        const originalBg = dropdown.style.backgroundColor;
+        dropdown.style.backgroundColor = 'var(--success-green)';
+        dropdown.style.color = 'white';
+        setTimeout(() => {
+          dropdown.style.backgroundColor = originalBg;
+          dropdown.style.color = '';
+        }, 1000);
+        
+      } catch (e) {
+        console.error('Error loading team:', e);
+        alert('⚠️ Error loading team data!');
+      }
+    }
+
+    function deleteSelectedTeam() {
+      const dropdown = document.getElementById('savedTeams');
+      const teamName = dropdown.value;
+      
+      if (!teamName) {
+        alert('⚠️ Please select a team to delete.');
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to delete "${teamName}"?`)) {
+        return;
+      }
+
+      const savedTeams = getSavedTeams();
+      delete savedTeams[teamName];
+      
+      saveTeamsToStorage(savedTeams);
+      updateSavedTeamsDropdown();
+      
+      alert(`🗑️ Team "${teamName}" deleted.`);
+    }
+
+    // Add event listener for team selection
+    document.addEventListener('DOMContentLoaded', function() {
+      const dropdown = document.getElementById('savedTeams');
+      if (dropdown) {
+        dropdown.addEventListener('change', loadSelectedTeam);
+      }
+    });
 
     // Current position limits (will be updated based on format)
     let currentPositionLimits = { ...positionLimits };
@@ -1500,6 +1693,7 @@
 
     // Initialize the roster builder on page load
     updatePositionLimits(); // Set correct limits for default format
+    updateSavedTeamsDropdown(); // Load saved teams
     renderRosterBuilder();
   </script>
 </div>
