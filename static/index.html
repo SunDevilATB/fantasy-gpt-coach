@@ -2,7 +2,7 @@
 <html>
 <head>
   <link href="https://fonts.googleapis.com/css2?family=-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text',Helvetica,Arial,sans-serif&display=swap" rel="stylesheet">
-  <title>Fantasy Football Coach Claude</title>
+  <title>Fantasy Football GPT Coach</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
@@ -71,11 +71,11 @@
     }
 
     .content {
-      padding: 24px;
+      padding: 20px;
     }
 
     .section {
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
 
     .section:last-child {
@@ -86,7 +86,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .section-title {
@@ -299,73 +299,222 @@
       100% { transform: rotate(360deg); }
     }
 
-    .advice-bubble {
-      background: linear-gradient(135deg, #F0F9FF, #E0F2FE);
-      border: 1px solid #BAE6FD;
-      border-radius: var(--radius-small);
-      padding: 20px;
+    /* Compact Lineup Display */
+    .lineup-container {
+      display: grid;
+      gap: 16px;
       margin: 16px 0;
-      position: relative;
     }
 
-    .challenge-bubble {
-      background: linear-gradient(135deg, #FEF3C7, #FDE68A);
-      border: 1px solid #F59E0B;
+    .lineup-section {
+      background: var(--background-secondary);
+      border: 1px solid var(--border-color);
       border-radius: var(--radius-small);
-      padding: 20px;
-      margin: 16px 0;
-      position: relative;
+      overflow: hidden;
     }
 
-    .pos-title {
+    .lineup-header {
+      background: var(--background-tertiary);
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .lineup-title {
       font-size: 16px;
       font-weight: 700;
       color: var(--text-primary);
-      margin: 16px 0 8px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0;
+    }
+
+    .lineup-badge {
+      background: var(--primary-blue);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .lineup-badge.bench {
+      background: var(--secondary-gray);
+    }
+
+    .lineup-badge.waiver {
+      background: var(--warning-orange);
+    }
+
+    .player-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1px;
+      background: var(--border-color);
+    }
+
+    .player-card {
+      background: var(--background-secondary);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: background 0.2s ease;
+      min-height: 60px;
+      justify-content: center;
+    }
+
+    .player-card:hover {
+      background: var(--background-tertiary);
+    }
+
+    .player-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .player-position {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    /* Starters Grid - Organized by Position */
+    .starters-grid {
+      display: grid;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .position-group-display {
+      background: var(--background-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-small);
+      overflow: hidden;
+    }
+
+    .position-group-header {
+      background: linear-gradient(135deg, var(--primary-blue), #5AC8FA);
+      color: white;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
-    .pos-title:first-child {
-      margin-top: 0;
+    .position-players {
+      padding: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
-    .player-list {
-      list-style: none;
-      padding: 0;
+    .starter-pill {
+      background: var(--background-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .starter-pill:hover {
+      background: var(--primary-blue);
+      color: white;
+      transform: translateY(-1px);
+    }
+
+    /* Strategy Card */
+    .strategy-card {
+      background: linear-gradient(135deg, #F0F9FF, #E0F2FE);
+      border: 1px solid #BAE6FD;
+      border-radius: var(--radius-small);
+      padding: 16px;
+      margin: 16px 0;
+    }
+
+    .strategy-card .strategy-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary-blue);
+      margin: 0 0 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .strategy-card .strategy-text {
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--text-secondary);
       margin: 0;
     }
 
-    .player-list li {
-      background: white;
-      padding: 12px 16px;
-      margin-bottom: 6px;
-      border-radius: var(--radius-small);
-      border-left: 4px solid var(--success-green);
-      font-weight: 500;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .player-list.bench li {
-      border-left-color: var(--secondary-gray);
-    }
-
-    .player-list.waiver li {
-      border-left-color: var(--warning-orange);
-    }
-
-    .strategy-summary {
-      background: rgba(0, 122, 255, 0.1);
+    /* Challenge Section Redesign */
+    .challenge-card {
+      background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+      border: 1px solid #F59E0B;
       border-radius: var(--radius-small);
       padding: 16px;
-      margin-top: 16px;
-      font-style: italic;
-      color: var(--text-secondary);
+      margin: 16px 0;
+    }
+
+    .challenge-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #92400E;
+      margin: 0 0 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Mobile Optimizations */
+    @media (max-width: 480px) {
+      .player-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .starter-pill {
+        min-width: 100px;
+        font-size: 13px;
+        padding: 6px 12px;
+      }
+
+      .position-players {
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .lineup-container {
+        gap: 12px;
+      }
+
+      .strategy-card, .challenge-card {
+        padding: 12px;
+        margin: 12px 0;
+      }
+
+      .starters-grid {
+        gap: 8px;
+      }
     }
 
     .challenge-section {
-      margin-top: 24px;
-      padding-top: 24px;
+      margin-top: 20px;
+      padding-top: 20px;
       border-top: 1px solid var(--border-color);
     }
 
@@ -563,11 +712,13 @@
       </div>
 
       <div id="challenge-area" class="challenge-section" style="display: none;">
-        <label>Challenge the Coach</label>
-        <textarea id="userChallenge" rows="2" placeholder="Why did you bench my star player?"></textarea>
-        <button class="btn btn-warning" style="width: 100%; margin-top: 12px;" onclick="challengeCoach()">
-          🗣 Submit Challenge
-        </button>
+        <div class="strategy-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border-color: #F59E0B;">
+          <h3 style="color: #92400E; margin: 0 0 12px 0; font-size: 16px; font-weight: 700;">🗣 Challenge the Coach</h3>
+          <textarea id="userChallenge" rows="2" placeholder="Why did you bench my star player?" style="margin-bottom: 12px;"></textarea>
+          <button class="btn btn-warning" style="width: 100%;" onclick="challengeCoach()">
+            Submit Challenge
+          </button>
+        </div>
       </div>
 
       <div id="rebuttal" class="output-card" style="display: none;">
@@ -1031,13 +1182,70 @@
           return;
         }
 
-        let html = '<div class="advice-bubble">';
+        // Build the new compact lineup display
+        let html = '<div class="lineup-container">';
+        
+        // Starting Lineup - Organized by Position
+        html += '<div class="starters-grid">';
         Object.entries(data.recommended_starters).forEach(([pos, players]) => {
-          html += `<div class="pos-title">${pos}</div><ul class="player-list">${players.map(p => `<li>${p}</li>`).join("")}</ul>`;
+          html += `
+            <div class="position-group-display">
+              <div class="position-group-header">${pos}</div>
+              <div class="position-players">
+                ${players.map(p => `<div class="starter-pill">${p}</div>`).join('')}
+              </div>
+            </div>
+          `;
         });
-        html += `<div class="pos-title">Bench</div><ul class="player-list bench">${data.bench.map(p => `<li>${p}</li>`).join("")}</ul>`;
-        html += `<div class="pos-title">Waiver Watch</div><ul class="player-list waiver">${data.waiver_watchlist.map(p => `<li>${p}</li>`).join("")}</ul>`;
-        html += `<div class="strategy-summary">${data.strategy_summary}</div></div>`;
+        html += '</div>';
+
+        // Bench Section
+        if (data.bench && data.bench.length > 0) {
+          html += `
+            <div class="lineup-section">
+              <div class="lineup-header">
+                <h3 class="lineup-title">Bench</h3>
+                <span class="lineup-badge bench">${data.bench.length}</span>
+              </div>
+              <div class="player-grid">
+                ${data.bench.map(p => `
+                  <div class="player-card">
+                    <div class="player-name">${p}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        // Waiver Watch Section
+        if (data.waiver_watchlist && data.waiver_watchlist.length > 0) {
+          html += `
+            <div class="lineup-section">
+              <div class="lineup-header">
+                <h3 class="lineup-title">Waiver Watch</h3>
+                <span class="lineup-badge waiver">${data.waiver_watchlist.length}</span>
+              </div>
+              <div class="player-grid">
+                ${data.waiver_watchlist.map(p => `
+                  <div class="player-card">
+                    <div class="player-name">${p}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        // Strategy Section
+        html += `
+          <div class="strategy-card">
+            <h3 class="strategy-title">🧠 Strategy Notes</h3>
+            <p class="strategy-text">${data.strategy_summary}</p>
+          </div>
+        `;
+
+        html += '</div>';
 
         outputDiv.className = "output-card fade-in";
         outputDiv.innerHTML = html;
@@ -1105,7 +1313,10 @@
         rebuttalBox.className = "output-card fade-in";
         rebuttalBox.innerHTML = data.error
           ? `<div style="color: var(--error-red);">⚠️ ${data.error}</div>`
-          : `<div class="challenge-bubble">🗯️ ${data.rebuttal}</div>`;
+          : `<div class="challenge-card">
+               <h3 class="challenge-title">🗯️ Coach's Response</h3>
+               <p style="margin: 0; line-height: 1.5; color: #92400E;">${data.rebuttal}</p>
+             </div>`;
       } catch {
         rebuttalBox.className = "output-card";
         rebuttalBox.innerHTML = '<div style="color: var(--error-red);">❌ Coach failed to respond.</div>';
