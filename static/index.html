@@ -627,8 +627,17 @@
       }
       
       .player-row {
-        flex-direction: column;
-        gap: 8px;
+        gap: 6px;
+      }
+      
+      .player-row input {
+        font-size: 16px; /* Prevent zoom on iOS */
+      }
+      
+      .remove-player {
+        padding: 8px 10px;
+        font-size: 14px;
+        min-width: 40px;
       }
 
       .autocomplete-dropdown {
@@ -692,8 +701,7 @@
           </div>
           
           <div class="btn-group">
-            <button class="btn btn-secondary btn-small" onclick="loadSampleRoster('ppr')">📋 PPR Sample</button>
-            <button class="btn btn-secondary btn-small" onclick="loadSampleRoster('2qb')">📋 2QB Sample</button>
+            <button class="btn btn-secondary btn-small" onclick="randomizeRoster()">🎲 Random Roster</button>
             <button class="btn btn-secondary btn-small" onclick="clearRoster()">🧹 Clear All</button>
           </div>
           
@@ -880,6 +888,69 @@
       FLEX: 2,
       BENCH: 8
     };
+
+    // League Format Position Limits
+    const formatLimits = {
+      'Standard (Non-PPR)': {
+        QB: 2,
+        RB: 4,
+        WR: 5,
+        TE: 2,
+        FLEX: 1,
+        BENCH: 6
+      },
+      'PPR': {
+        QB: 2,
+        RB: 5,
+        WR: 6,
+        TE: 2,
+        FLEX: 2,
+        BENCH: 7
+      },
+      'Half-PPR': {
+        QB: 2,
+        RB: 5,
+        WR: 6,
+        TE: 2,
+        FLEX: 2,
+        BENCH: 7
+      },
+      '2QB': {
+        QB: 3,
+        RB: 4,
+        WR: 5,
+        TE: 2,
+        FLEX: 2,
+        BENCH: 8
+      },
+      'Superflex': {
+        QB: 3,
+        RB: 5,
+        WR: 6,
+        TE: 2,
+        FLEX: 2,
+        BENCH: 8
+      },
+      'Dynasty PPR': {
+        QB: 3,
+        RB: 8,
+        WR: 10,
+        TE: 3,
+        FLEX: 3,
+        BENCH: 15
+      },
+      'Custom': {
+        QB: 3,
+        RB: 6,
+        WR: 6,
+        TE: 3,
+        FLEX: 2,
+        BENCH: 8
+      }
+    };
+
+    // Current position limits (will be updated based on format)
+    let currentPositionLimits = { ...positionLimits };
 
     const sampleRosters = {
       ppr: {
@@ -1074,20 +1145,36 @@
       });
     }
 
-    document.getElementById("format").addEventListener("change", function() {
+    function updatePositionLimits() {
+      const format = document.getElementById("format").value;
       const customWrapper = document.getElementById("custom-format-wrapper");
-      if (this.value === "Custom") {
+      
+      if (format === "Custom") {
         customWrapper.classList.add("show");
+        // Keep current limits for custom
       } else {
         customWrapper.classList.remove("show");
+        // Update limits based on format
+        currentPositionLimits = { ...formatLimits[format] };
+        
+        // Trim rosters if they exceed new limits
+        Object.keys(currentPositionLimits).forEach(position => {
+          if (roster[position].length > currentPositionLimits[position]) {
+            roster[position] = roster[position].slice(0, currentPositionLimits[position]);
+          }
+        });
+        
+        renderRosterBuilder();
       }
-    });
+    }
+
+    document.getElementById("format").addEventListener("change", updatePositionLimits);
 
     function renderRosterBuilder() {
       const container = document.getElementById('roster-builder');
       container.innerHTML = '';
 
-      Object.keys(positionLimits).forEach(position => {
+      Object.keys(currentPositionLimits).forEach(position => {
         const positionCard = document.createElement('div');
         positionCard.className = 'position-card';
         
@@ -1095,7 +1182,7 @@
         headerDiv.className = 'position-header';
         headerDiv.innerHTML = `
           <span class="position-title">${position}</span>
-          <span class="position-count">${roster[position].length}/${positionLimits[position]}</span>
+          <span class="position-count">${roster[position].length}/${currentPositionLimits[position]}</span>
         `;
         positionCard.appendChild(headerDiv);
 
@@ -1131,7 +1218,7 @@
         });
 
         // Add button to add more players
-        if (roster[position].length < positionLimits[position]) {
+        if (roster[position].length < currentPositionLimits[position]) {
           const addButton = document.createElement('button');
           addButton.className = 'btn add-player-btn';
           addButton.textContent = `+ Add ${position}`;
@@ -1144,7 +1231,7 @@
     }
 
     function addPlayer(position) {
-      if (roster[position].length < positionLimits[position]) {
+      if (roster[position].length < currentPositionLimits[position]) {
         roster[position].push('');
         renderRosterBuilder();
         // Focus on the new input with a slight delay
@@ -1167,17 +1254,51 @@
       roster[position][index] = value;
     }
 
-    function loadSampleRoster(type) {
-      roster = JSON.parse(JSON.stringify(sampleRosters[type]));
-      // Ensure all positions exist
-      Object.keys(positionLimits).forEach(pos => {
-        if (!roster[pos]) roster[pos] = [];
+    function randomizeRoster() {
+      // Clear current roster
+      Object.keys(currentPositionLimits).forEach(pos => {
+        roster[pos] = [];
       });
+
+      const usedPlayers = new Set();
+
+      // Fill each position with random players
+      Object.keys(currentPositionLimits).forEach(position => {
+        const limit = currentPositionLimits[position];
+        
+        for (let i = 0; i < limit; i++) {
+          let availablePlayers = [];
+          
+          // Get available players for this position
+          if (position === 'FLEX' || position === 'BENCH') {
+            // FLEX and BENCH can use RB, WR, TE
+            availablePlayers = [
+              ...playerDatabase.RB,
+              ...playerDatabase.WR,
+              ...playerDatabase.TE
+            ];
+          } else if (playerDatabase[position]) {
+            availablePlayers = [...playerDatabase[position]];
+          }
+          
+          // Filter out already used players
+          availablePlayers = availablePlayers.filter(player => !usedPlayers.has(player));
+          
+          // If we have available players, pick one randomly
+          if (availablePlayers.length > 0) {
+            const randomIndex = Math.floor(Math.random() * availablePlayers.length);
+            const selectedPlayer = availablePlayers[randomIndex];
+            roster[position].push(selectedPlayer);
+            usedPlayers.add(selectedPlayer);
+          }
+        }
+      });
+
       renderRosterBuilder();
     }
 
     function clearRoster() {
-      Object.keys(roster).forEach(pos => {
+      Object.keys(currentPositionLimits).forEach(pos => {
         roster[pos] = [];
       });
       renderRosterBuilder();
@@ -1378,6 +1499,7 @@
     }
 
     // Initialize the roster builder on page load
+    updatePositionLimits(); // Set correct limits for default format
     renderRosterBuilder();
   </script>
 </div>
