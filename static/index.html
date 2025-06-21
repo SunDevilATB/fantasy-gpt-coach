@@ -1,544 +1,1120 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text',Helvetica,Arial,sans-serif&display=swap" rel="stylesheet">
   <title>Fantasy Football GPT Coach</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      display: flex;
-      justify-content: center;
-      padding: 40px 16px;
-      background: #f8f9fa;
-    }
-    .container {
-      max-width: 800px;
-      width: 100%;
-      background: #fff;
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    }
-    h1 { font-size: 28px; font-weight: 600; color: #202124; margin-bottom: 16px; }
-    label {
-      display: block;
-      margin-top: 20px;
-      font-weight: 600;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-family: inherit;
-      box-sizing: border-box;
-    }
-    button {
-      font-size: 16px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 999px;
-      cursor: pointer;
-      background: #444;
-      color: white;
-      margin-top: 14px;
-      font-weight: 500;
-      transition: background 0.2s ease;
-    }
-    button:hover {
-      background: #222;
-    }
-    button:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-    .button-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 14px;
-    }
-    .button-row button {
-      background: #555;
-    }
-    .button-row button:hover {
-      background: #333;
+    :root {
+      --primary-blue: #007AFF;
+      --primary-blue-dark: #0056CC;
+      --secondary-gray: #8E8E93;
+      --background-primary: #F2F2F7;
+      --background-secondary: #FFFFFF;
+      --background-tertiary: #F9F9F9;
+      --text-primary: #000000;
+      --text-secondary: #3C3C43;
+      --text-tertiary: #8E8E93;
+      --border-color: #D1D1D6;
+      --success-green: #34C759;
+      --warning-orange: #FF9500;
+      --error-red: #FF3B30;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-large: 0 4px 16px rgba(0,0,0,0.1);
+      --radius: 12px;
+      --radius-small: 8px;
     }
 
-    /* Roster Builder Styles */
-    .roster-section {
-      margin-top: 20px;
+    * {
+      box-sizing: border-box;
     }
-    .position-group {
-      margin-bottom: 20px;
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', Helvetica, Arial, sans-serif;
+      background: var(--background-primary);
+      color: var(--text-primary);
+      margin: 0;
       padding: 16px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      background: #fafafa;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
     }
-    .position-header {
-      font-weight: 600;
+
+    .container {
+      max-width: 428px;
+      margin: 0 auto;
+      background: var(--background-secondary);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-large);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary-blue), #5AC8FA);
+      color: white;
+      padding: 20px 24px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .header p {
       font-size: 16px;
-      color: #333;
-      margin-bottom: 12px;
+      margin: 8px 0 0 0;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+
+    .content {
+      padding: 24px;
+    }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 16px;
     }
-    .position-count {
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .section-subtitle {
       font-size: 14px;
-      color: #666;
-      font-weight: normal;
+      color: var(--text-tertiary);
+      margin: 4px 0 0 0;
     }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-small);
+      background: var(--background-secondary);
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius-small);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      min-height: 44px;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--primary-blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-blue-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--background-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-color);
+    }
+
+    .btn-success {
+      background: var(--success-green);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--warning-orange);
+      color: white;
+    }
+
+    .btn-error {
+      background: var(--error-red);
+      color: white;
+    }
+
+    .btn-small {
+      padding: 8px 12px;
+      font-size: 14px;
+      min-height: 36px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-group .btn {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .position-card {
+      background: var(--background-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-small);
+      padding: 16px;
+      margin-bottom: 16px;
+      transition: all 0.2s ease;
+    }
+
+    .position-card:hover {
+      box-shadow: var(--shadow);
+    }
+
+    .position-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .position-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .position-count {
+      background: var(--primary-blue);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
     .player-row {
       display: flex;
       gap: 8px;
       margin-bottom: 8px;
-      align-items: center;
-    }
-    .player-row input {
-      flex: 1;
-      margin-top: 0;
-      padding: 8px 12px;
-      font-size: 14px;
-    }
-    .remove-player {
-      background: #ff4444;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      margin-top: 0;
-      min-width: 60px;
-    }
-    .add-player {
-      background: #4CAF50;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      margin-top: 8px;
-    }
-    .add-player:disabled {
-      background: #ccc;
+      align-items: stretch;
     }
 
-    h2 {
-      margin-top: 32px;
-      font-size: 22px;
-      font-weight: 600;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 6px;
+    .player-row input {
+      flex: 1;
+      margin-bottom: 0;
     }
-    .output {
-      background: #fff;
-      border: 1px solid #ddd;
-      padding: 16px;
-      border-radius: 8px;
-      margin-top: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      opacity: 1;
-      transform: translateY(0);
-      transition: all 0.4s ease;
-      box-sizing: border-box;
+
+    .player-row .btn {
+      flex-shrink: 0;
+      margin-bottom: 0;
     }
-    .bubble {
+
+    .add-player-btn {
+      width: 100%;
+      margin-top: 8px;
+      border: 2px dashed var(--border-color);
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    .add-player-btn:hover:not(:disabled) {
+      border-color: var(--primary-blue);
+      color: var(--primary-blue);
+      background: rgba(0, 122, 255, 0.05);
+    }
+
+    .output-card {
+      background: var(--background-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-small);
+      padding: 20px;
+      margin-top: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .loading {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 40px 20px;
+    }
+
+    .loading::before {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-color);
+      border-top: 2px solid var(--primary-blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .advice-bubble {
+      background: linear-gradient(135deg, #F0F9FF, #E0F2FE);
+      border: 1px solid #BAE6FD;
+      border-radius: var(--radius-small);
+      padding: 20px;
+      margin: 16px 0;
       position: relative;
-      padding: 12px 16px;
-      border-radius: 20px;
-      margin: 12px 0;
-      max-width: 90%;
-      line-height: 1.4;
     }
-    .bubble-advice {
-      background: #f1f0f0;
-      border: 1px solid #ccc;
-      border-bottom-left-radius: 4px;
+
+    .challenge-bubble {
+      background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+      border: 1px solid #F59E0B;
+      border-radius: var(--radius-small);
+      padding: 20px;
+      margin: 16px 0;
+      position: relative;
     }
-    .bubble-advice::after {
-      content: "";
-      position: absolute;
-      bottom: 0;
-      left: 20px;
-      border: 10px solid transparent;
-      border-top-color: #f1f0f0;
-      border-bottom: 0;
-      margin-bottom: -10px;
-    }
-    .bubble-coach {
-      background: #ddf;
-      border: 1px solid #aad;
-      margin-left: auto;
-      border-bottom-right-radius: 4px;
-    }
-    .bubble-coach::after {
-      content: "";
-      position: absolute;
-      bottom: 0;
-      right: 20px;
-      border: 10px solid transparent;
-      border-top-color: #ddf;
-      border-bottom: 0;
-      margin-bottom: -10px;
-    }
-    .pos {
+
+    .pos-title {
+      font-size: 16px;
       font-weight: 700;
-      margin: 12px 0 6px;
-      color: #444;
+      color: var(--text-primary);
+      margin: 16px 0 8px 0;
       text-transform: uppercase;
-      font-size: 15px;
+      letter-spacing: 0.5px;
     }
-    ul {
-      padding-left: 20px;
-      margin-top: 5px;
+
+    .pos-title:first-child {
+      margin-top: 0;
+    }
+
+    .player-list {
       list-style: none;
+      padding: 0;
+      margin: 0;
     }
-    ul li {
-      margin-left: 10px;
-      padding: 4px 6px;
-      border-left: 3px solid #ccc;
-      margin-bottom: 5px;
-      transition: background 0.2s ease;
+
+    .player-list li {
+      background: white;
+      padding: 12px 16px;
+      margin-bottom: 6px;
+      border-radius: var(--radius-small);
+      border-left: 4px solid var(--success-green);
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .player-list.bench li {
+      border-left-color: var(--secondary-gray);
+    }
+
+    .player-list.waiver li {
+      border-left-color: var(--warning-orange);
+    }
+
+    .strategy-summary {
+      background: rgba(0, 122, 255, 0.1);
+      border-radius: var(--radius-small);
+      padding: 16px;
+      margin-top: 16px;
+      font-style: italic;
+      color: var(--text-secondary);
+    }
+
+    .challenge-section {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    #custom-format-wrapper {
+      margin-top: 12px;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    #custom-format-wrapper.show {
+      opacity: 1;
+      max-height: 100px;
+    }
+
+    .back-btn {
+      position: fixed;
+      top: 50px;
+      left: 24px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      z-index: 100;
+      min-width: 44px;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: 22px;
+    }
+
+    /* Autocomplete Styles */
+    .autocomplete-container {
+      position: relative;
+      flex: 1;
+    }
+
+    .autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--background-secondary);
+      border: 1px solid var(--border-color);
+      border-top: none;
+      border-radius: 0 0 var(--radius-small) var(--radius-small);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: var(--shadow-large);
+      display: none;
+    }
+
+    .autocomplete-dropdown.show {
+      display: block;
+    }
+
+    .autocomplete-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background-color 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.highlighted {
+      background: var(--background-tertiary);
+    }
+
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+
+    .player-name {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .player-position {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      background: var(--background-tertiary);
+      padding: 2px 6px;
       border-radius: 4px;
+      font-weight: 600;
     }
-    ul.recommended li { border-color: #4CAF50; background: #f0fff0; }
-    ul.bench li { border-color: #F44336; background: #fff0f0; }
-    ul.waiver li { border-color: #FF9800; background: #fff8e1; }
-    @media (max-width: 600px) {
-      .button-row {
+
+    .autocomplete-no-results {
+      padding: 12px 16px;
+      color: var(--text-tertiary);
+      font-style: italic;
+      text-align: center;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 0;
+      }
+      
+      .container {
+        border-radius: 0;
+        min-height: 100vh;
+      }
+      
+      .btn-group {
         flex-direction: column;
       }
-      button {
-        width: 100%;
-        font-size: 16px;
-        padding: 12px;
-      }
-      h1 { font-size: 22px; }
+      
       .player-row {
         flex-direction: column;
-        gap: 4px;
+        gap: 8px;
       }
-      .remove-player {
-        width: 100%;
+
+      .autocomplete-dropdown {
+        max-height: 160px;
+        font-size: 16px; /* Prevent zoom on iOS */
       }
+
+      .autocomplete-item {
+        padding: 14px 16px;
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🏈 Fantasy GPT Coach</h1>
+    <div class="header">
+      <h1>🏈 Fantasy GPT Coach</h1>
+      <p>AI-powered lineup optimization</p>
+    </div>
 
-    <div id="config-area">
-      <label>League Format</label>
-      <select id="format">
-        <option>Standard (Non-PPR)</option>
-        <option selected>PPR</option>
-        <option>Half-PPR</option>
-        <option>2QB</option>
-        <option>Superflex</option>
-        <option>Dynasty PPR</option>
-        <option>Custom</option>
-      </select>
+    <div class="content">
+      <div id="config-area">
+        <div class="section">
+          <div class="form-group">
+            <label>League Format</label>
+            <select id="format">
+              <option>Standard (Non-PPR)</option>
+              <option selected>PPR</option>
+              <option>Half-PPR</option>
+              <option>2QB</option>
+              <option>Superflex</option>
+              <option>Dynasty PPR</option>
+              <option>Custom</option>
+            </select>
+            <div id="custom-format-wrapper">
+              <input id="custom-format" placeholder="e.g. TE Premium, 3 FLEX, IDP">
+            </div>
+          </div>
 
-      <div id="custom-format-wrapper" style="display:none;">
-        <label>Custom Format Details</label>
-        <input id="custom-format" placeholder="e.g. TE Premium, 3 FLEX, IDP">
+          <div class="form-group">
+            <label>Additional Notes</label>
+            <textarea id="notes" rows="2" placeholder="Weather concerns, injury updates, tough matchups..."></textarea>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Build Your Roster</h2>
+              <p class="section-subtitle">Add your players by position</p>
+            </div>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn btn-secondary btn-small" onclick="loadSampleRoster('ppr')">📋 PPR Sample</button>
+            <button class="btn btn-secondary btn-small" onclick="loadSampleRoster('2qb')">📋 2QB Sample</button>
+            <button class="btn btn-secondary btn-small" onclick="clearRoster()">🧹 Clear All</button>
+          </div>
+          
+          <div id="roster-builder">
+            <!-- Roster positions will be dynamically generated here -->
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="width: 100%;" onclick="getAdvice()">
+          🎯 Get Lineup Advice
+        </button>
       </div>
 
-      <label>Notes (Optional)</label>
-      <input id="notes" placeholder="e.g. Good matchup, rain expected, injuries...">
+      <div id="output" class="output-card" style="display: none;">
+        <!-- Advice will appear here -->
+      </div>
 
-      <div class="roster-section">
-        <label>Build Your Roster</label>
-        <div class="button-row">
-          <button onclick="loadSampleRoster('ppr')">📋 Load PPR Sample</button>
-          <button onclick="loadSampleRoster('2qb')">📋 Load 2QB Sample</button>
-          <button onclick="clearRoster()">🧹 Clear All</button>
-        </div>
+      <div id="challenge-area" class="challenge-section" style="display: none;">
+        <label>Challenge the Coach</label>
+        <textarea id="userChallenge" rows="2" placeholder="Why did you bench my star player?"></textarea>
+        <button class="btn btn-warning" style="width: 100%; margin-top: 12px;" onclick="challengeCoach()">
+          🗣 Submit Challenge
+        </button>
+      </div>
+
+      <div id="rebuttal" class="output-card" style="display: none;">
+        <!-- Coach rebuttal will appear here -->
+      </div>
+    </div>
+
+    <button id="back-btn" class="btn btn-secondary back-btn" style="display: none;" onclick="toggleConfig()">
+      ←
+    </button>
+  </div>
+
+  <script>
+    // NFL Player Database (2025 Season - Updated with 2024 & 2025 Rookies)
+    const playerDatabase = {
+      QB: [
+        // Established Veterans
+        'Josh Allen', 'Lamar Jackson', 'Patrick Mahomes', 'Joe Burrow', 'Jalen Hurts',
+        'Justin Herbert', 'Dak Prescott', 'Tua Tagovailoa', 'Kyler Murray', 'Russell Wilson',
+        'Aaron Rodgers', 'Geno Smith', 'Kirk Cousins', 'Trevor Lawrence', 'Anthony Richardson',
+        'Brock Purdy', 'Jared Goff', 'Daniel Jones', 'Derek Carr', 'Justin Fields',
+        'C.J. Stroud', 'Kenny Pickett', 'Deshaun Watson', 'Ryan Tannehill', 'Mac Jones',
+        'Bryce Young', 'Will Levis', 'Sam Howell', 'Baker Mayfield', 'Jordan Love',
+        'Aidan O\'Connell', 'Tommy DeVito', 'Mason Rudolph', 'Gardner Minshew', 'Jacoby Brissett',
         
-        <div id="roster-builder">
-          <!-- Roster positions will be dynamically generated here -->
-        </div>
-      </div>
+        // 2024 Rookies (Now Second Year)
+        'Jayden Daniels', 'Caleb Williams', 'Drake Maye', 'Bo Nix', 'J.J. McCarthy', 'Michael Penix Jr.',
+        
+        // 2025 Rookies
+        'Cam Ward', 'Dillon Gabriel', 'Shedeur Sanders', 'Jalen Milroe', 'Quinn Ewers',
+        'Kyle McCord', 'Tyler Shough', 'Will Howard', 'Aidan Chiles', 'Thomas Castellanos'
+      ],
+      RB: [
+        // Established Veterans
+        'Christian McCaffrey', 'Austin Ekeler', 'Derrick Henry', 'Josh Jacobs', 'Nick Chubb',
+        'Saquon Barkley', 'Tony Pollard', 'Aaron Jones', 'Joe Mixon', 'Kenneth Walker III',
+        'Najee Harris', 'Alvin Kamara', 'Ezekiel Elliott', 'Miles Sanders', 'David Montgomery',
+        'Rhamondre Stevenson', 'James Conner', 'Travis Etienne', 'D\'Andre Swift', 'Javonte Williams',
+        'Alexander Mattison', 'Rachaad White', 'Jerome Ford', 'Isiah Pacheco', 'Breece Hall',
+        'Jonathan Taylor', 'Cam Akers', 'Khalil Herbert', 'Zamir White', 'Tyler Allgeier',
+        'James Cook', 'Brian Robinson Jr.', 'Gus Edwards', 'Chuba Hubbard', 'Roschon Johnson',
+        'Antonio Gibson', 'Tank Bigsby', 'Jaylen Warren', 'Justice Hill', 'Rico Dowdle',
+        'Dameon Pierce', 'Kenneth Gainwell', 'Devin Singletary', 'Elijah Mitchell', 'Jordan Mason',
+        'Ty Chandler', 'AJ Dillon', 'Samaje Perine', 'Clyde Edwards-Helaire', 'Zack Moss',
+        
+        // 2024 Rookies (Now Second Year)
+        'Jayden Reed', 'Blake Corum', 'Trey Benson', 'MarShawn Lloyd', 'Jaylen Wright',
+        'Braelon Allen', 'Jonathon Brooks', 'Ray Davis', 'Kimani Vidal', 'Isaac Guerendo',
+        
+        // 2025 Rookies  
+        'Ashton Jeanty', 'Omarion Hampton', 'Quinshon Judkins', 'Dylan Sampson', 'Cam Skattebo',
+        'TreVeyon Henderson', 'Nicholas Singleton', 'Kaleb Johnson', 'RJ Harvey', 'Woody Marks'
+      ],
+      WR: [
+        // Established Veterans
+        'Tyreek Hill', 'Stefon Diggs', 'Davante Adams', 'Cooper Kupp', 'DeAndre Hopkins',
+        'A.J. Brown', 'Mike Evans', 'Keenan Allen', 'Amari Cooper', 'Tyler Lockett',
+        'DK Metcalf', 'CeeDee Lamb', 'Ja\'Marr Chase', 'Justin Jefferson', 'Amon-Ra St. Brown',
+        'Puka Nacua', 'Chris Olave', 'Garrett Wilson', 'Jaylen Waddle', 'Terry McLaurin',
+        'Calvin Ridley', 'DJ Moore', 'Michael Pittman Jr.', 'Courtland Sutton', 'Tee Higgins',
+        'Mike Williams', 'Jerry Jeudy', 'Diontae Johnson', 'Christian Kirk', 'Marquise Goodwin',
+        'Drake London', 'Chris Godwin', 'Brandon Aiyuk', 'Deebo Samuel', 'Rashod Bateman',
+        'Elijah Moore', 'Gabe Davis', 'Curtis Samuel', 'Adam Thielen', 'Jordan Addison',
+        'Tank Dell', 'Nico Collins', 'George Pickens', 'Christian Watson', 'Romeo Doubs',
+        'DeVonta Smith', 'Zay Flowers', 'Rashee Rice', 'Josh Palmer', 'Tutu Atwell',
+        'Darius Slayton', 'Noah Brown', 'Wan\'Dale Robinson', 'Isaiah Hodgins', 'Donovan Peoples-Jones',
+        
+        // 2024 Rookies (Now Second Year)
+        'Malik Nabers', 'Jayden Reed', 'Rome Odunze', 'Marvin Harrison Jr.', 'Brian Thomas Jr.',
+        'Xavier Worthy', 'Ladd McConkey', 'Keon Coleman', 'Xavier Legette', 'Adonai Mitchell',
+        'Ricky Pearsall', 'Ja\'Lynn Polk', 'Luke McCaffrey', 'Jalen McMillan', 'Troy Franklin',
+        
+        // 2025 Rookies
+        'Travis Hunter', 'Matthew Golden', 'Emeka Egbuka', 'Tetairoa McMillan', 'Luther Burden III',
+        'Elic Ayomanor', 'Jaylin Noel', 'Jayden Higgins', 'Jalen Royals', 'Isaiah Bond',
+        'Savion Williams', 'Jaylin Lane', 'Tai Felton', 'Jeshaun Jones', 'Kevin Concepcion'
+      ],
+      TE: [
+        // Established Veterans
+        'Travis Kelce', 'Mark Andrews', 'T.J. Hockenson', 'George Kittle', 'Darren Waller',
+        'Kyle Pitts', 'Dallas Goedert', 'Evan Engram', 'Sam LaPorta', 'David Njoku',
+        'Pat Freiermuth', 'Tyler Higbee', 'Gerald Everett', 'Cole Kmet', 'Dawson Knox',
+        'Jake Ferguson', 'Noah Fant', 'Hayden Hurst', 'Logan Thomas', 'Hunter Henry',
+        'Mike Gesicki', 'Isaiah Likely', 'Chigoziem Okonkwo', 'Luke Musgrave', 'Tucker Kraft',
+        'Juwan Johnson', 'Durham Smythe', 'Will Dissly', 'Irv Smith Jr.', 'Tyler Conklin',
+        'Trey McBride', 'Daniel Bellinger', 'Greg Dulcich', 'Cade Otton', 'Foster Moreau',
+        
+        // 2024 Rookies (Now Second Year)
+        'Brock Bowers', 'Ja\'Tavion Sanders', 'Ben Sinnott', 'Theo Johnson', 'Erick All Jr.',
+        'Dalton Kincaid', 'Michael Mayer',
+        
+        // 2025 Rookies
+        'Tyler Warren', 'Colston Loveland', 'Harold Fannin Jr.', 'Mitchell Evans', 'Oscar Delp',
+        'Gunnar Helm', 'Jake Briningstool', 'Eli Stowers', 'Nick Elksnis', 'Walker Lyons'
+      ]
+    };
 
-      <button onclick="getAdvice()">🔍 Get Lineup Advice</button>
-    </div>
+    // Roster management
+    let roster = {
+      QB: [],
+      RB: [],
+      WR: [],
+      TE: [],
+      FLEX: [],
+      BENCH: []
+    };
 
-    <h2>📋 Advice</h2>
-    <div id="output" class="output">Add some players to your roster above to get started!</div>
+    const positionLimits = {
+      QB: 3,
+      RB: 6,
+      WR: 6,
+      TE: 3,
+      FLEX: 2,
+      BENCH: 8
+    };
 
-    <div id="challenge-area" style="margin-top:20px;display:none;">
-      <label>Challenge the Coach</label>
-      <textarea id="userChallenge" rows="2" placeholder="Ask the coach why he benched a player..."></textarea>
-      <button style="background:#e53935; color:white;" onclick="challengeCoach()">🗣 Submit Challenge</button>
-    </div>
+    const sampleRosters = {
+      ppr: {
+        QB: ['Josh Allen'],
+        RB: ['Christian McCaffrey', 'Saquon Barkley'],
+        WR: ['Tyreek Hill', 'Stefon Diggs', 'Mike Evans'],
+        TE: ['Travis Kelce'],
+        FLEX: ['Tony Pollard'],
+        BENCH: ['Tua Tagovailoa', 'James Conner', 'Jerry Jeudy']
+      },
+      '2qb': {
+        QB: ['Josh Allen', 'Lamar Jackson'],
+        RB: ['Austin Ekeler', 'Josh Jacobs'],
+        WR: ['Cooper Kupp', 'Davante Adams'],
+        TE: ['Mark Andrews'],
+        FLEX: ['Amari Cooper'],
+        BENCH: ['Geno Smith', 'Rhamondre Stevenson']
+      }
+    };
 
-    <button id="back-btn" style="display:none; margin-top:16px;" onclick="toggleConfig()">🔄 Change Settings</button>
+    // Autocomplete functionality
+    function createDropdown() {
+      const dropdown = document.createElement('div');
+      dropdown.className = 'autocomplete-dropdown';
+      return dropdown;
+    }
 
-    <div id="rebuttal" class="output" style="margin-top:20px;display:none;"></div>
+    function getRelevantPlayers(position, query) {
+      // For FLEX and BENCH, include RB, WR, TE
+      let availablePlayers = [];
+      
+      if (position === 'FLEX' || position === 'BENCH') {
+        availablePlayers = [
+          ...playerDatabase.RB,
+          ...playerDatabase.WR, 
+          ...playerDatabase.TE
+        ];
+      } else if (playerDatabase[position]) {
+        availablePlayers = playerDatabase[position];
+      } else {
+        // Fallback for any position
+        availablePlayers = Object.values(playerDatabase).flat();
+      }
 
-    <script>
-      // Roster management
-      let roster = {
-        QB: [],
-        RB: [],
-        WR: [],
-        TE: [],
-        FLEX: [],
-        BENCH: []
-      };
+      // Filter by query
+      if (!query || query.length < 1) return [];
+      
+      const filtered = availablePlayers.filter(player => 
+        player.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      // Sort by relevance (starts with query first, then contains)
+      filtered.sort((a, b) => {
+        const aStarts = a.toLowerCase().startsWith(query.toLowerCase());
+        const bStarts = b.toLowerCase().startsWith(query.toLowerCase());
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return a.localeCompare(b);
+      });
+      
+      return filtered.slice(0, 8); // Limit results
+    }
 
-      const positionLimits = {
-        QB: 3,
-        RB: 6,
-        WR: 6,
-        TE: 3,
-        FLEX: 2,
-        BENCH: 8
-      };
-
-      const sampleRosters = {
-        ppr: {
-          QB: ['Josh Allen'],
-          RB: ['Christian McCaffrey', 'Saquon Barkley'],
-          WR: ['Tyreek Hill', 'Stefon Diggs', 'Mike Evans'],
-          TE: ['Travis Kelce'],
-          FLEX: ['Tony Pollard'],
-          BENCH: ['Tua Tagovailoa', 'James Conner', 'Jerry Jeudy']
-        },
-        '2qb': {
-          QB: ['Josh Allen', 'Lamar Jackson'],
-          RB: ['Austin Ekeler', 'Josh Jacobs'],
-          WR: ['Cooper Kupp', 'Davante Adams'],
-          TE: ['Mark Andrews'],
-          FLEX: ['Amari Cooper'],
-          BENCH: ['Geno Smith', 'Rhamondre Stevenson']
+    function getPlayerPosition(playerName) {
+      for (const [position, players] of Object.entries(playerDatabase)) {
+        if (players.includes(playerName)) {
+          return position;
         }
-      };
+      }
+      return '';
+    }
 
-      document.getElementById("format").addEventListener("change", function() {
-        document.getElementById("custom-format-wrapper").style.display =
-          this.value === "Custom" ? "block" : "none";
+    function setupAutocomplete(input, position, index) {
+      const dropdown = input.parentNode.querySelector('.autocomplete-dropdown');
+      let highlightedIndex = -1;
+      let currentResults = [];
+
+      function showDropdown(results) {
+        currentResults = results;
+        dropdown.innerHTML = '';
+        
+        if (results.length === 0) {
+          const noResults = document.createElement('div');
+          noResults.className = 'autocomplete-no-results';
+          noResults.textContent = 'No players found';
+          dropdown.appendChild(noResults);
+        } else {
+          results.forEach((player, idx) => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            if (idx === highlightedIndex) {
+              item.classList.add('highlighted');
+            }
+            
+            const playerPos = getPlayerPosition(player);
+            item.innerHTML = `
+              <span class="player-name">${player}</span>
+              <span class="player-position">${playerPos}</span>
+            `;
+            
+            item.onclick = () => selectPlayer(player);
+            dropdown.appendChild(item);
+          });
+        }
+        
+        dropdown.classList.add('show');
+      }
+
+      function hideDropdown() {
+        dropdown.classList.remove('show');
+        highlightedIndex = -1;
+      }
+
+      function selectPlayer(playerName) {
+        input.value = playerName;
+        updatePlayer(position, index, playerName);
+        hideDropdown();
+        input.blur();
+      }
+
+      function updateHighlight() {
+        const items = dropdown.querySelectorAll('.autocomplete-item:not(.autocomplete-no-results)');
+        items.forEach((item, idx) => {
+          item.classList.toggle('highlighted', idx === highlightedIndex);
+        });
+      }
+
+      // Input event handler
+      input.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        updatePlayer(position, index, query);
+        
+        if (query.length >= 1) {
+          const results = getRelevantPlayers(position, query);
+          showDropdown(results);
+          highlightedIndex = -1;
+        } else {
+          hideDropdown();
+        }
       });
 
-      function renderRosterBuilder() {
-        const container = document.getElementById('roster-builder');
-        container.innerHTML = '';
-
-        Object.keys(positionLimits).forEach(position => {
-          const positionDiv = document.createElement('div');
-          positionDiv.className = 'position-group';
-          
-          const headerDiv = document.createElement('div');
-          headerDiv.className = 'position-header';
-          headerDiv.innerHTML = `
-            ${position}
-            <span class="position-count">${roster[position].length}/${positionLimits[position]}</span>
-          `;
-          positionDiv.appendChild(headerDiv);
-
-          // Add existing players
-          roster[position].forEach((player, index) => {
-            const playerRow = document.createElement('div');
-            playerRow.className = 'player-row';
-            playerRow.innerHTML = `
-              <input type="text" value="${player}" onchange="updatePlayer('${position}', ${index}, this.value)" placeholder="Enter player name">
-              <button class="remove-player" onclick="removePlayer('${position}', ${index})">Remove</button>
-            `;
-            positionDiv.appendChild(playerRow);
-          });
-
-          // Add button to add more players
-          if (roster[position].length < positionLimits[position]) {
-            const addButton = document.createElement('button');
-            addButton.className = 'add-player';
-            addButton.textContent = `+ Add ${position}`;
-            addButton.onclick = () => addPlayer(position);
-            positionDiv.appendChild(addButton);
-          }
-
-          container.appendChild(positionDiv);
-        });
-      }
-
-      function addPlayer(position) {
-        if (roster[position].length < positionLimits[position]) {
-          roster[position].push('');
-          renderRosterBuilder();
-          // Focus on the new input
-          setTimeout(() => {
-            const newInputs = document.querySelectorAll(`input[onchange*="${position}"]`);
-            const lastInput = newInputs[newInputs.length - 1];
-            if (lastInput) lastInput.focus();
-          }, 100);
-        }
-      }
-
-      function removePlayer(position, index) {
-        roster[position].splice(index, 1);
-        renderRosterBuilder();
-      }
-
-      function updatePlayer(position, index, value) {
-        roster[position][index] = value;
-      }
-
-      function loadSampleRoster(type) {
-        roster = JSON.parse(JSON.stringify(sampleRosters[type]));
-        // Ensure all positions exist
-        Object.keys(positionLimits).forEach(pos => {
-          if (!roster[pos]) roster[pos] = [];
-        });
-        renderRosterBuilder();
-      }
-
-      function clearRoster() {
-        Object.keys(roster).forEach(pos => {
-          roster[pos] = [];
-        });
-        renderRosterBuilder();
-      }
-
-      function buildRosterJSON() {
-        // Filter out empty player names and empty position arrays
-        const cleanRoster = {};
-        Object.keys(roster).forEach(pos => {
-          const players = roster[pos].filter(p => p && p.trim() !== '');
-          if (players.length > 0) {
-            cleanRoster[pos] = players;
-          }
-        });
-        return cleanRoster;
-      }
-
-      async function getAdvice() {
-        const rosterData = buildRosterJSON();
+      // Keyboard navigation
+      input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.autocomplete-item:not(.autocomplete-no-results)');
         
-        // Check if roster has any players
-        if (Object.keys(rosterData).length === 0) {
-          alert("⚠️ Please add some players to your roster first!");
-          return;
+        switch (e.key) {
+          case 'ArrowDown':
+            e.preventDefault();
+            highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+            updateHighlight();
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            highlightedIndex = Math.max(highlightedIndex - 1, -1);
+            updateHighlight();
+            break;
+          case 'Enter':
+            e.preventDefault();
+            if (highlightedIndex >= 0 && currentResults[highlightedIndex]) {
+              selectPlayer(currentResults[highlightedIndex]);
+            }
+            break;
+          case 'Escape':
+            hideDropdown();
+            input.blur();
+            break;
         }
+      });
 
-        document.getElementById("config-area").style.display = "none";
-        document.getElementById("back-btn").style.display = "inline-block";
-        const out = document.getElementById("output");
-        out.innerHTML = "⏳ Thinking...";
-        out.style.opacity = 1;
+      // Focus/blur events
+      input.addEventListener('focus', () => {
+        const query = input.value.trim();
+        if (query.length >= 1) {
+          const results = getRelevantPlayers(position, query);
+          showDropdown(results);
+        }
+      });
 
-        const format = document.getElementById("format").value;
-        const custom = document.getElementById("custom-format").value;
-        const fullFormat = format === "Custom" ? `Custom: ${custom}` : format;
-        const notes = document.getElementById("notes").value;
+      // Hide dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!input.parentNode.contains(e.target)) {
+          hideDropdown();
+        }
+      });
+    }
 
-        try {
-          const res = await fetch("/recommend", {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({ 
-              scoring_format: fullFormat, 
-              notes, 
-              roster: rosterData 
-            })
-          });
+    document.getElementById("format").addEventListener("change", function() {
+      const customWrapper = document.getElementById("custom-format-wrapper");
+      if (this.value === "Custom") {
+        customWrapper.classList.add("show");
+      } else {
+        customWrapper.classList.remove("show");
+      }
+    });
+
+    function renderRosterBuilder() {
+      const container = document.getElementById('roster-builder');
+      container.innerHTML = '';
+
+      Object.keys(positionLimits).forEach(position => {
+        const positionCard = document.createElement('div');
+        positionCard.className = 'position-card';
+        
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'position-header';
+        headerDiv.innerHTML = `
+          <span class="position-title">${position}</span>
+          <span class="position-count">${roster[position].length}/${positionLimits[position]}</span>
+        `;
+        positionCard.appendChild(headerDiv);
+
+        // Add existing players
+        roster[position].forEach((player, index) => {
+          const playerRow = document.createElement('div');
+          playerRow.className = 'player-row';
           
-          const data = await res.json();
-
-          if (data.error) {
-            out.innerHTML = "⚠️ " + data.error;
-            return;
-          }
-
-          let html = '';
-          Object.entries(data.recommended_starters).forEach(([pos, players]) => {
-            html += `<div class="pos">${pos}</div><ul class="recommended">${players.map(p => `<li>${p}</li>`).join("")}</ul>`;
-          });
-          html += `<div class="pos">Bench</div><ul class="bench">${data.bench.map(p => `<li>${p}</li>`).join("")}</ul>`;
-          html += `<div class="pos">Waiver</div><ul class="waiver">${data.waiver_watchlist.map(p => `<li>${p}</li>`).join("")}</ul>`;
-
-          out.innerHTML = `<div class="bubble bubble-advice">${html}<p class="strategy">${data.strategy_summary}</p></div>`;
-          document.getElementById("challenge-area").style.display = "block";
-        } catch (error) {
-          out.innerHTML = "❌ Failed to get advice. Please try again.";
-          console.error('Error:', error);
-        }
-      }
-
-      function toggleConfig() {
-        document.getElementById("config-area").style.display = "block";
-        document.getElementById("back-btn").style.display = "none";
-        document.getElementById("challenge-area").style.display = "none";
-        document.getElementById("rebuttal").style.display = "none";
-        document.getElementById("output").innerHTML = "Add some players to your roster above to get started!";
-      }
-
-      async function challengeCoach() {
-        const rebuttalBox = document.getElementById("rebuttal");
-        const userPrompt = document.getElementById("userChallenge").value.trim();
-        if (!userPrompt) {
-          alert("⚠️ Enter a question for the coach.");
-          return;
-        }
-
-        const format = document.getElementById("format").value;
-        const custom = document.getElementById("custom-format").value;
-        const fullFormat = format === "Custom" ? `Custom: ${custom}` : format;
-
-        rebuttalBox.style.display = "block";
-        rebuttalBox.style.opacity = 0;
-        rebuttalBox.style.transform = "translateY(10px)";
-        rebuttalBox.innerHTML = "😤 Coach is preparing a response...";
-
-        const starters = {};
-        document.querySelectorAll(".recommended").forEach(ul => {
-          const pos = ul.previousElementSibling?.textContent?.trim();
-          starters[pos] = Array.from(ul.querySelectorAll("li")).map(li => li.textContent);
+          const autocompleteContainer = document.createElement('div');
+          autocompleteContainer.className = 'autocomplete-container';
+          
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = player;
+          input.placeholder = 'Enter player name';
+          input.setAttribute('data-position', position);
+          input.setAttribute('data-index', index);
+          
+          autocompleteContainer.appendChild(input);
+          autocompleteContainer.appendChild(createDropdown());
+          
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'btn btn-error btn-small';
+          removeBtn.textContent = '×';
+          removeBtn.onclick = () => removePlayer(position, index);
+          
+          playerRow.appendChild(autocompleteContainer);
+          playerRow.appendChild(removeBtn);
+          positionCard.appendChild(playerRow);
+          
+          // Setup autocomplete for this input
+          setupAutocomplete(input, position, index);
         });
 
-        const bench = Array.from(document.querySelectorAll(".bench li")).map(li => li.textContent);
-        const waiver = Array.from(document.querySelectorAll(".waiver li")).map(li => li.textContent);
-        const summary = document.querySelector("p.strategy")?.textContent || "";
-
-        try {
-          const res = await fetch("/challenge", {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({ 
-              advice: {
-                recommended_starters: starters, 
-                bench, 
-                waiver_watchlist: waiver, 
-                strategy_summary: summary
-              }, 
-              scoring_format: fullFormat, 
-              user_challenge: userPrompt 
-            })
-          });
-          const data = await res.json();
-          rebuttalBox.innerHTML = data.error
-            ? "⚠️ " + data.error
-            : `<div class="bubble bubble-coach">🗯️ ${data.rebuttal}</div>`;
-          rebuttalBox.style.opacity = 1;
-          rebuttalBox.style.transform = "translateY(0)";
-        } catch {
-          rebuttalBox.innerHTML = "❌ Coach failed to respond.";
-          rebuttalBox.style.opacity = 1;
-          rebuttalBox.style.transform = "translateY(0)";
+        // Add button to add more players
+        if (roster[position].length < positionLimits[position]) {
+          const addButton = document.createElement('button');
+          addButton.className = 'btn add-player-btn';
+          addButton.textContent = `+ Add ${position}`;
+          addButton.onclick = () => addPlayer(position);
+          positionCard.appendChild(addButton);
         }
+
+        container.appendChild(positionCard);
+      });
+    }
+
+    function addPlayer(position) {
+      if (roster[position].length < positionLimits[position]) {
+        roster[position].push('');
+        renderRosterBuilder();
+        // Focus on the new input with a slight delay
+        setTimeout(() => {
+          const allInputs = document.querySelectorAll(`input[data-position="${position}"]`);
+          const lastInput = allInputs[allInputs.length - 1];
+          if (lastInput) {
+            lastInput.focus();
+          }
+        }, 100);
+      }
+    }
+
+    function removePlayer(position, index) {
+      roster[position].splice(index, 1);
+      renderRosterBuilder();
+    }
+
+    function updatePlayer(position, index, value) {
+      roster[position][index] = value;
+    }
+
+    function loadSampleRoster(type) {
+      roster = JSON.parse(JSON.stringify(sampleRosters[type]));
+      // Ensure all positions exist
+      Object.keys(positionLimits).forEach(pos => {
+        if (!roster[pos]) roster[pos] = [];
+      });
+      renderRosterBuilder();
+    }
+
+    function clearRoster() {
+      Object.keys(roster).forEach(pos => {
+        roster[pos] = [];
+      });
+      renderRosterBuilder();
+    }
+
+    function buildRosterJSON() {
+      // Filter out empty player names and empty position arrays
+      const cleanRoster = {};
+      Object.keys(roster).forEach(pos => {
+        const players = roster[pos].filter(p => p && p.trim() !== '');
+        if (players.length > 0) {
+          cleanRoster[pos] = players;
+        }
+      });
+      return cleanRoster;
+    }
+
+    async function getAdvice() {
+      const rosterData = buildRosterJSON();
+      
+      // Check if roster has any players
+      if (Object.keys(rosterData).length === 0) {
+        alert("⚠️ Please add some players to your roster first!");
+        return;
       }
 
-      // Initialize the roster builder on page load
-      renderRosterBuilder();
-    </script>
+      document.getElementById("config-area").style.display = "none";
+      document.getElementById("back-btn").style.display = "block";
+      
+      const outputDiv = document.getElementById("output");
+      outputDiv.style.display = "block";
+      outputDiv.className = "output-card loading fade-in";
+      outputDiv.innerHTML = "Analyzing your roster and matchups...";
 
-  </div>
+      const format = document.getElementById("format").value;
+      const custom = document.getElementById("custom-format").value;
+      const fullFormat = format === "Custom" ? `Custom: ${custom}` : format;
+      const notes = document.getElementById("notes").value;
+
+      try {
+        const res = await fetch("/recommend", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ 
+            scoring_format: fullFormat, 
+            notes, 
+            roster: rosterData 
+          })
+        });
+        
+        const data = await res.json();
+
+        if (data.error) {
+          outputDiv.className = "output-card";
+          outputDiv.innerHTML = `<div style="color: var(--error-red);">⚠️ ${data.error}</div>`;
+          return;
+        }
+
+        let html = '<div class="advice-bubble">';
+        Object.entries(data.recommended_starters).forEach(([pos, players]) => {
+          html += `<div class="pos-title">${pos}</div><ul class="player-list">${players.map(p => `<li>${p}</li>`).join("")}</ul>`;
+        });
+        html += `<div class="pos-title">Bench</div><ul class="player-list bench">${data.bench.map(p => `<li>${p}</li>`).join("")}</ul>`;
+        html += `<div class="pos-title">Waiver Watch</div><ul class="player-list waiver">${data.waiver_watchlist.map(p => `<li>${p}</li>`).join("")}</ul>`;
+        html += `<div class="strategy-summary">${data.strategy_summary}</div></div>`;
+
+        outputDiv.className = "output-card fade-in";
+        outputDiv.innerHTML = html;
+        document.getElementById("challenge-area").style.display = "block";
+      } catch (error) {
+        outputDiv.className = "output-card";
+        outputDiv.innerHTML = '<div style="color: var(--error-red);">❌ Failed to get advice. Please try again.</div>';
+        console.error('Error:', error);
+      }
+    }
+
+    function toggleConfig() {
+      document.getElementById("config-area").style.display = "block";
+      document.getElementById("back-btn").style.display = "none";
+      document.getElementById("challenge-area").style.display = "none";
+      document.getElementById("rebuttal").style.display = "none";
+      document.getElementById("output").style.display = "none";
+    }
+
+    async function challengeCoach() {
+      const rebuttalBox = document.getElementById("rebuttal");
+      const userPrompt = document.getElementById("userChallenge").value.trim();
+      if (!userPrompt) {
+        alert("⚠️ Enter a question for the coach.");
+        return;
+      }
+
+      const format = document.getElementById("format").value;
+      const custom = document.getElementById("custom-format").value;
+      const fullFormat = format === "Custom" ? `Custom: ${custom}` : format;
+
+      rebuttalBox.style.display = "block";
+      rebuttalBox.className = "output-card loading fade-in";
+      rebuttalBox.innerHTML = "Coach is preparing a response...";
+
+      const starters = {};
+      document.querySelectorAll(".player-list:not(.bench):not(.waiver)").forEach(ul => {
+        const pos = ul.previousElementSibling?.textContent?.trim();
+        if (pos) {
+          starters[pos] = Array.from(ul.querySelectorAll("li")).map(li => li.textContent);
+        }
+      });
+
+      const bench = Array.from(document.querySelectorAll(".player-list.bench li")).map(li => li.textContent);
+      const waiver = Array.from(document.querySelectorAll(".player-list.waiver li")).map(li => li.textContent);
+      const summary = document.querySelector(".strategy-summary")?.textContent || "";
+
+      try {
+        const res = await fetch("/challenge", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ 
+            advice: {
+              recommended_starters: starters, 
+              bench, 
+              waiver_watchlist: waiver, 
+              strategy_summary: summary
+            }, 
+            scoring_format: fullFormat, 
+            user_challenge: userPrompt 
+          })
+        });
+        const data = await res.json();
+        
+        rebuttalBox.className = "output-card fade-in";
+        rebuttalBox.innerHTML = data.error
+          ? `<div style="color: var(--error-red);">⚠️ ${data.error}</div>`
+          : `<div class="challenge-bubble">🗯️ ${data.rebuttal}</div>`;
+      } catch {
+        rebuttalBox.className = "output-card";
+        rebuttalBox.innerHTML = '<div style="color: var(--error-red);">❌ Coach failed to respond.</div>';
+      }
+    }
+
+    // Initialize the roster builder on page load
+    renderRosterBuilder();
+  </script>
+</div>
 </body>
 </html>

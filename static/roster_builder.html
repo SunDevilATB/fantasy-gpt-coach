@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <title>Fantasy Roster Builder</title>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f8f9fa;
+    }
+    .roster-builder {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .position-group {
+      margin-bottom: 20px;
+      padding: 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .position-header {
+      font-weight: 600;
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .position-limit {
+      font-size: 14px;
+      color: #666;
+      font-weight: normal;
+    }
+    .player-input {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .player-input input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .remove-btn {
+      background: #ff4444;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .add-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .json-output {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .quick-fill {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .quick-fill button {
+      background: #666;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .copy-btn {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="roster-builder">
+    <h1>🏈 Build Your Roster</h1>
+    
+    <div class="quick-fill">
+      <button onclick="loadSample('ppr')">Load PPR Sample</button>
+      <button onclick="loadSample('2qb')">Load 2QB Sample</button>
+      <button onclick="clearAll()">Clear All</button>
+    </div>
+
+    <div id="positions-container">
+      <!-- Position groups will be generated here -->
+    </div>
+
+    <h3>Generated JSON:</h3>
+    <div class="json-output" id="json-output">{}</div>
+    <button class="copy-btn" onclick="copyToClipboard()">📋 Copy JSON</button>
+  </div>
+
+  <script>
+    const positionLimits = {
+      'QB': 3,
+      'RB': 6,
+      'WR': 6,
+      'TE': 3,
+      'FLEX': 2,
+      'BENCH': 8
+    };
+
+    const sampleRosters = {
+      ppr: {
+        'QB': ['Josh Allen'],
+        'RB': ['Christian McCaffrey', 'Saquon Barkley'],
+        'WR': ['Tyreek Hill', 'Stefon Diggs', 'Mike Evans'],
+        'TE': ['Travis Kelce'],
+        'FLEX': ['Tony Pollard'],
+        'BENCH': ['Tua Tagovailoa', 'James Conner', 'Jerry Jeudy']
+      },
+      '2qb': {
+        'QB': ['Josh Allen', 'Lamar Jackson'],
+        'RB': ['Austin Ekeler', 'Josh Jacobs'],
+        'WR': ['Cooper Kupp', 'Davante Adams'],
+        'TE': ['Mark Andrews'],
+        'FLEX': ['Amari Cooper'],
+        'BENCH': ['Geno Smith', 'Rhamondre Stevenson']
+      }
+    };
+
+    let roster = {};
+
+    function initializeRoster() {
+      Object.keys(positionLimits).forEach(pos => {
+        roster[pos] = [];
+      });
+      renderPositions();
+      updateJSON();
+    }
+
+    function renderPositions() {
+      const container = document.getElementById('positions-container');
+      container.innerHTML = '';
+
+      Object.keys(positionLimits).forEach(position => {
+        const div = document.createElement('div');
+        div.className = 'position-group';
+        div.innerHTML = `
+          <div class="position-header">
+            ${position}
+            <span class="position-limit">(${roster[position].length}/${positionLimits[position]})</span>
+          </div>
+          <div id="${position}-players">
+            ${roster[position].map((player, index) => `
+              <div class="player-input">
+                <input type="text" value="${player}" onchange="updatePlayer('${position}', ${index}, this.value)" placeholder="Enter player name">
+                <button class="remove-btn" onclick="removePlayer('${position}', ${index})">×</button>
+              </div>
+            `).join('')}
+          </div>
+          <button class="add-btn" onclick="addPlayer('${position}')" ${roster[position].length >= positionLimits[position] ? 'disabled' : ''}>
+            + Add ${position}
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function addPlayer(position) {
+      if (roster[position].length < positionLimits[position]) {
+        roster[position].push('');
+        renderPositions();
+        updateJSON();
+      }
+    }
+
+    function removePlayer(position, index) {
+      roster[position].splice(index, 1);
+      renderPositions();
+      updateJSON();
+    }
+
+    function updatePlayer(position, index, value) {
+      roster[position][index] = value;
+      updateJSON();
+    }
+
+    function updateJSON() {
+      // Filter out empty players and empty position arrays
+      const cleanRoster = {};
+      Object.keys(roster).forEach(pos => {
+        const players = roster[pos].filter(p => p.trim() !== '');
+        if (players.length > 0) {
+          cleanRoster[pos] = players;
+        }
+      });
+      
+      document.getElementById('json-output').textContent = JSON.stringify(cleanRoster, null, 2);
+    }
+
+    function loadSample(type) {
+      roster = JSON.parse(JSON.stringify(sampleRosters[type]));
+      // Fill missing positions
+      Object.keys(positionLimits).forEach(pos => {
+        if (!roster[pos]) roster[pos] = [];
+      });
+      renderPositions();
+      updateJSON();
+    }
+
+    function clearAll() {
+      Object.keys(roster).forEach(pos => {
+        roster[pos] = [];
+      });
+      renderPositions();
+      updateJSON();
+    }
+
+    function copyToClipboard() {
+      const jsonText = document.getElementById('json-output').textContent;
+      navigator.clipboard.writeText(jsonText).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      });
+    }
+
+    // Initialize on page load
+    initializeRoster();
+  </script>
+</body>
+</html>

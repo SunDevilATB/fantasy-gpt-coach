@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <title>Fantasy Football GPT Coach</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px;
+      background: #f8f9fa;
+    }
+    .container {
+      max-width: 800px;
+      width: 100%;
+      background: #fff;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    h1 { font-size: 28px; font-weight: 600; color: #202124; margin-bottom: 16px; }
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: 600;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    button {
+      font-size: 16px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      background: #444;
+      color: white;
+      margin-top: 14px;
+      font-weight: 500;
+      transition: background 0.2s ease;
+    }
+    button:hover {
+      background: #222;
+    }
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .button-row button {
+      background: #555;
+    }
+    .button-row button:hover {
+      background: #333;
+    }
+    h2 {
+      margin-top: 32px;
+      font-size: 22px;
+      font-weight: 600;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 6px;
+    }
+    .output {
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      opacity: 1;
+      transform: translateY(0);
+      transition: all 0.4s ease;
+      box-sizing: border-box;
+    }
+    .bubble {
+      position: relative;
+      padding: 12px 16px;
+      border-radius: 20px;
+      margin: 12px 0;
+      max-width: 90%;
+      line-height: 1.4;
+    }
+    .bubble-advice {
+      background: #f1f0f0;
+      border: 1px solid #ccc;
+      border-bottom-left-radius: 4px;
+    }
+    .bubble-advice::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 20px;
+      border: 10px solid transparent;
+      border-top-color: #f1f0f0;
+      border-bottom: 0;
+      margin-bottom: -10px;
+    }
+    .bubble-coach {
+      background: #ddf;
+      border: 1px solid #aad;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+    .bubble-coach::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      right: 20px;
+      border: 10px solid transparent;
+      border-top-color: #ddf;
+      border-bottom: 0;
+      margin-bottom: -10px;
+    }
+    .pos {
+      font-weight: 700;
+      margin: 12px 0 6px;
+      color: #444;
+      text-transform: uppercase;
+      font-size: 15px;
+    }
+    ul {
+      padding-left: 20px;
+      margin-top: 5px;
+      list-style: none;
+    }
+    ul li {
+      margin-left: 10px;
+      padding: 4px 6px;
+      border-left: 3px solid #ccc;
+      margin-bottom: 5px;
+      transition: background 0.2s ease;
+      border-radius: 4px;
+    }
+    ul.recommended li { border-color: #4CAF50; background: #f0fff0; }
+    ul.bench li { border-color: #F44336; background: #fff0f0; }
+    ul.waiver li { border-color: #FF9800; background: #fff8e1; }
+    @media (max-width: 600px) {
+      .button-row {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+        font-size: 16px;
+        padding: 12px;
+      }
+      h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏈 Fantasy GPT Coach</h1>
+
+    <div id="config-area">
+      <label>League Format</label>
+      <select id="format">
+        <option>Standard (Non-PPR)</option>
+        <option selected>PPR</option>
+        <option>Half-PPR</option>
+        <option>2QB</option>
+        <option>Superflex</option>
+        <option>Dynasty PPR</option>
+        <option>Custom</option>
+      </select>
+
+      <div id="custom-format-wrapper" style="display:none;">
+        <label>Custom Format Details</label>
+        <input id="custom-format" placeholder="e.g. TE Premium, 3 FLEX, IDP">
+      </div>
+
+      <label>Notes (Optional)</label>
+      <input id="notes" placeholder="e.g. Good matchup, rain expected, injuries...">
+
+      <label>Paste Your Roster JSON</label>
+      <textarea id="roster" rows="10" placeholder='{"QB":["..."],"RB":["..."],...}'></textarea>
+
+      <div class="button-row">
+        <button onclick="loadSampleRoster('ppr')">📋 Load PPR Roster</button>
+        <button onclick="loadSampleRoster('2qb')">📋 Load 2QB Roster</button>
+        <button onclick="loadSampleRoster('random')">🎲 Random Roster</button>
+        <button onclick="clearRoster()">🧹 Clear Roster</button>
+      </div>
+
+      <button onclick="getAdvice()">🔍 Get Lineup Advice</button>
+    </div>
+
+    <h2>📋 Advice</h2>
+    <div id="output" class="output">Waiting...</div>
+
+    <div id="challenge-area" style="margin-top:20px;display:none;">
+      <label>Challenge the Coach</label>
+      <textarea id="userChallenge" rows="2" placeholder="Ask the coach why he benched a player..."></textarea>
+      <button style="background:#e53935; color:white;" onclick="challengeCoach()">🗣 Submit Challenge</button>
+    </div>
+
+    <button id="back-btn" style="display:none; margin-top:16px;" onclick="toggleConfig()">🔄 Change Settings</button>
+
+    <div id="rebuttal" class="output" style="margin-top:20px;display:none;"></div>
+
+    <script>
+      document.getElementById("format").addEventListener("change", function() {
+        document.getElementById("custom-format-wrapper").style.display =
+          this.value === "Custom" ? "block" : "none";
+      });
+
+      function loadSampleRoster(type) {
+        const ppr = {"QB":["Kirk Cousins"],"RB":["Bijan Robinson"],"WR":["Tyreek Hill"],"TE":["Sam LaPorta"],"FLEX":["Christian Kirk"],"BENCH":["Najee Harris"]};
+        const qb2 = {"QB":["Tua Tagovailoa","Jordan Love"],"RB":["Josh Jacobs"],"WR":["Keenan Allen"],"TE":["David Njoku"],"FLEX":["Zay Flowers"],"BENCH":["Brian Robinson Jr."]};
+        const sampleType = type === "2qb" ? qb2 : ppr;
+        document.getElementById("roster").value = JSON.stringify(sampleType, null, 2);
+      }
+
+      function clearRoster() {
+        document.getElementById("roster").value = "";
+      }
+
+      async function getAdvice() {
+        document.getElementById("config-area").style.display = "none";
+        document.getElementById("back-btn").style.display = "inline-block";
+        const out = document.getElementById("output");
+        out.innerHTML = "⏳ Thinking...";
+        out.style.opacity = 1;
+
+        const format = document.getElementById("format").value;
+        const custom = document.getElementById("custom-format").value;
+        const fullFormat = format === "Custom" ? `Custom: ${custom}` : format;
+        const notes = document.getElementById("notes").value;
+
+        let roster;
+        try {
+          roster = JSON.parse(document.getElementById("roster").value);
+        } catch {
+          alert("⚠️ Invalid JSON roster.");
+          return;
+        }
+
+        const res = await fetch("/recommend", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ scoring_format: fullFormat, notes, roster })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          out.innerHTML = "⚠️ " + data.error;
+          return;
+        }
+
+        let html = '';
+        Object.entries(data.recommended_starters).forEach(([pos, players]) => {
+          html += `<div class="pos">${pos}</div><ul class="recommended">${players.map(p => `<li>${p}</li>`).join("")}</ul>`;
+        });
+        html += `<div class="pos">Bench</div><ul class="bench">${data.bench.map(p => `<li>${p}</li>`).join("")}</ul>`;
+        html += `<div class="pos">Waiver</div><ul class="waiver">${data.waiver_watchlist.map(p => `<li>${p}</li>`).join("")}</ul>`;
+
+        out.innerHTML = `<div class="bubble bubble-advice">${html}<p class="strategy">${data.strategy_summary}</p></div>`;
+        document.getElementById("challenge-area").style.display = "block";
+      }
+
+      function toggleConfig() {
+        document.getElementById("config-area").style.display = "block";
+        document.getElementById("back-btn").style.display = "none";
+        document.getElementById("challenge-area").style.display = "none";
+        document.getElementById("rebuttal").style.display = "none";
+        document.getElementById("output").innerHTML = "Waiting...";
+      }
+
+      async function challengeCoach() {
+        const rebuttalBox = document.getElementById("rebuttal");
+        const userPrompt = document.getElementById("userChallenge").value.trim();
+        if (!userPrompt) {
+          alert("⚠️ Enter a question for the coach.");
+          return;
+        }
+
+        const format = document.getElementById("format").value;
+        const custom = document.getElementById("custom-format").value;
+        const fullFormat = format === "Custom" ? `Custom: ${custom}` : format;
+
+        rebuttalBox.style.display = "block";
+        rebuttalBox.style.opacity = 0;
+        rebuttalBox.style.transform = "translateY(10px)";
+        rebuttalBox.innerHTML = "😤 Coach is preparing a response...";
+
+        const starters = {};
+        document.querySelectorAll(".recommended").forEach(ul => {
+          const pos = ul.previousElementSibling?.textContent?.trim();
+          starters[pos] = Array.from(ul.querySelectorAll("li")).map(li => li.textContent);
+        });
+
+        const bench = Array.from(document.querySelectorAll(".bench li")).map(li => li.textContent);
+        const waiver = Array.from(document.querySelectorAll(".waiver li")).map(li => li.textContent);
+        const summary = document.querySelector("p.strategy")?.textContent || "";
+
+        try {
+          const res = await fetch("/challenge", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ advice: {recommended_starters: starters, bench, waiver_watchlist: waiver, strategy_summary: summary}, scoring_format: fullFormat, user_challenge: userPrompt })
+          });
+          const data = await res.json();
+          rebuttalBox.innerHTML = data.error
+            ? "⚠️ " + data.error
+            : `<div class="bubble bubble-coach">🗯️ ${data.rebuttal}</div>`;
+          rebuttalBox.style.opacity = 1;
+          rebuttalBox.style.transform = "translateY(0)";
+        } catch {
+          rebuttalBox.innerHTML = "❌ Coach failed to respond.";
+          rebuttalBox.style.opacity = 1;
+          rebuttalBox.style.transform = "translateY(0)";
+        }
+      }
+    </script>
+
+  </div>
+</body>
+</html>
