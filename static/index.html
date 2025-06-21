@@ -816,6 +816,52 @@
       ]
     };
 
+    // Player to Team Mapping (2025 Season)
+    const playerTeams = {
+      // QBs
+      'Josh Allen': 'BUF', 'Lamar Jackson': 'BAL', 'Patrick Mahomes': 'KC', 'Joe Burrow': 'CIN', 'Jalen Hurts': 'PHI',
+      'Justin Herbert': 'LAC', 'Dak Prescott': 'DAL', 'Tua Tagovailoa': 'MIA', 'Kyler Murray': 'ARI', 'Russell Wilson': 'PIT',
+      'Aaron Rodgers': 'NYJ', 'Geno Smith': 'SEA', 'Kirk Cousins': 'ATL', 'Trevor Lawrence': 'JAX', 'Anthony Richardson': 'IND',
+      'Brock Purdy': 'SF', 'Jared Goff': 'DET', 'Daniel Jones': 'NYG', 'Derek Carr': 'NO', 'Justin Fields': 'PIT',
+      'C.J. Stroud': 'HOU', 'Kenny Pickett': 'PHI', 'Deshaun Watson': 'CLE', 'Ryan Tannehill': 'FA', 'Mac Jones': 'JAX',
+      'Bryce Young': 'CAR', 'Will Levis': 'TEN', 'Sam Howell': 'SEA', 'Baker Mayfield': 'TB', 'Jordan Love': 'GB',
+      'Aidan O\'Connell': 'LV', 'Tommy DeVito': 'NYG', 'Mason Rudolph': 'TEN', 'Gardner Minshew': 'LV', 'Jacoby Brissett': 'NE',
+      'Jayden Daniels': 'WSH', 'Caleb Williams': 'CHI', 'Drake Maye': 'NE', 'Bo Nix': 'DEN', 'J.J. McCarthy': 'MIN', 'Michael Penix Jr.': 'ATL',
+      'Cam Ward': 'TEN', 'Dillon Gabriel': 'CLE', 'Shedeur Sanders': 'CLE', 'Kyle McCord': 'PHI',
+
+      // RBs  
+      'Christian McCaffrey': 'SF', 'Austin Ekeler': 'WSH', 'Derrick Henry': 'BAL', 'Josh Jacobs': 'GB', 'Nick Chubb': 'CLE',
+      'Saquon Barkley': 'PHI', 'Tony Pollard': 'TEN', 'Aaron Jones': 'MIN', 'Joe Mixon': 'HOU', 'Kenneth Walker III': 'SEA',
+      'Najee Harris': 'PIT', 'Alvin Kamara': 'NO', 'James Conner': 'ARI', 'Travis Etienne': 'JAX', 'D\'Andre Swift': 'CHI',
+      'Javonte Williams': 'DEN', 'Rachaad White': 'TB', 'Jerome Ford': 'CLE', 'Isiah Pacheco': 'KC', 'Breece Hall': 'NYJ',
+      'Jonathan Taylor': 'IND', 'James Cook': 'BUF', 'Brian Robinson Jr.': 'WSH', 'Gus Edwards': 'LAC', 'Chuba Hubbard': 'CAR',
+      'Roschon Johnson': 'CHI', 'Tank Bigsby': 'JAX', 'Jaylen Warren': 'PIT', 'Justice Hill': 'BAL', 'Rico Dowdle': 'DAL',
+      'Kenneth Gainwell': 'PHI', 'Devin Singletary': 'NYG', 'Jordan Mason': 'SF', 'Ty Chandler': 'MIN', 'AJ Dillon': 'GB',
+      'Zamir White': 'LV', 'Tyler Allgeier': 'ATL', 'Khalil Herbert': 'CHI', 'Zack Moss': 'CIN', 'Cam Akers': 'HOU',
+      'Ashton Jeanty': 'LV', 'Omarion Hampton': 'LAC', 'Blake Corum': 'LAR', 'Trey Benson': 'ARI', 'Braelon Allen': 'NYJ',
+
+      // WRs
+      'Tyreek Hill': 'MIA', 'Stefon Diggs': 'HOU', 'Davante Adams': 'LV', 'Cooper Kupp': 'LAR', 'DeAndre Hopkins': 'KC',
+      'A.J. Brown': 'PHI', 'Mike Evans': 'TB', 'Keenan Allen': 'CHI', 'Amari Cooper': 'BUF', 'Tyler Lockett': 'SEA',
+      'DK Metcalf': 'SEA', 'CeeDee Lamb': 'DAL', 'Ja\'Marr Chase': 'CIN', 'Justin Jefferson': 'MIN', 'Amon-Ra St. Brown': 'DET',
+      'Puka Nacua': 'LAR', 'Chris Olave': 'NO', 'Garrett Wilson': 'NYJ', 'Jaylen Waddle': 'MIA', 'Terry McLaurin': 'WSH',
+      'Calvin Ridley': 'TEN', 'DJ Moore': 'CHI', 'Michael Pittman Jr.': 'IND', 'Courtland Sutton': 'DEN', 'Tee Higgins': 'CIN',
+      'Jerry Jeudy': 'CLE', 'Drake London': 'ATL', 'Chris Godwin': 'TB', 'Deebo Samuel': 'WSH', 'DeVonta Smith': 'PHI',
+      'Zay Flowers': 'BAL', 'George Pickens': 'PIT', 'Tank Dell': 'HOU', 'Nico Collins': 'HOU', 'Christian Watson': 'GB',
+      'Romeo Doubs': 'GB', 'Jordan Addison': 'MIN', 'Rashee Rice': 'KC', 'Josh Palmer': 'LAC', 'Marquise Goodwin': 'KC',
+      'Malik Nabers': 'NYG', 'Rome Odunze': 'CHI', 'Marvin Harrison Jr.': 'ARI', 'Brian Thomas Jr.': 'JAX', 'Xavier Worthy': 'KC',
+      'Ladd McConkey': 'LAC', 'Keon Coleman': 'BUF', 'Xavier Legette': 'CAR', 'Ricky Pearsall': 'SF', 'Ja\'Lynn Polk': 'NE',
+      'Travis Hunter': 'COL', 'Emeka Egbuka': 'TB', 'Matthew Golden': 'HOU',
+
+      // TEs
+      'Travis Kelce': 'KC', 'Mark Andrews': 'BAL', 'T.J. Hockenson': 'MIN', 'George Kittle': 'SF', 'Kyle Pitts': 'ATL',
+      'Dallas Goedert': 'PHI', 'Evan Engram': 'JAX', 'Sam LaPorta': 'DET', 'David Njoku': 'CLE', 'Pat Freiermuth': 'PIT',
+      'Jake Ferguson': 'DAL', 'Dawson Knox': 'BUF', 'Cole Kmet': 'CHI', 'Trey McBride': 'ARI', 'Tyler Higbee': 'LAR',
+      'Gerald Everett': 'CHI', 'Noah Fant': 'SEA', 'Hunter Henry': 'NE', 'Mike Gesicki': 'CIN', 'Isaiah Likely': 'BAL',
+      'Luke Musgrave': 'GB', 'Tucker Kraft': 'GB', 'Will Dissly': 'LAC', 'Tyler Conklin': 'NYJ', 'Cade Otton': 'TB',
+      'Brock Bowers': 'LV', 'Dalton Kincaid': 'BUF', 'Michael Mayer': 'LV', 'Tyler Warren': 'PIT', 'Colston Loveland': 'DET'
+    };
+
     // Roster management
     let roster = {
       QB: [],
@@ -906,6 +952,10 @@
       return '';
     }
 
+    function getPlayerTeam(playerName) {
+      return playerTeams[playerName] || '';
+    }
+
     function setupAutocomplete(input, position, index) {
       const dropdown = input.parentNode.querySelector('.autocomplete-dropdown');
       let highlightedIndex = -1;
@@ -929,9 +979,13 @@
             }
             
             const playerPos = getPlayerPosition(player);
+            const playerTeam = getPlayerTeam(player);
             item.innerHTML = `
               <span class="player-name">${player}</span>
-              <span class="player-position">${playerPos}</span>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <span class="player-position">${playerPos}</span>
+                ${playerTeam ? `<span class="player-position" style="background: var(--primary-blue); color: white;">${playerTeam}</span>` : ''}
+              </div>
             `;
             
             item.onclick = () => selectPlayer(player);
