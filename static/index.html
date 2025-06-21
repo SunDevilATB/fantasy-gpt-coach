@@ -527,8 +527,7 @@
 
     .challenge-section {
       margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border-color);
+      padding-top: 0;
     }
 
     #custom-format-wrapper {
@@ -1553,7 +1552,28 @@
         // Build the new compact lineup display
         let html = '<div class="lineup-container">';
         
-        // Starting Lineup - Organized by Position
+        // Strategy Section - FIRST (The main AI feature!)
+        html += `
+          <div class="strategy-card">
+            <h3 class="strategy-title">🧠 AI Strategy Recommendation</h3>
+            <p class="strategy-text">${data.strategy_summary}</p>
+          </div>
+        `;
+
+        // Challenge Section - SECOND
+        html += `
+          <div class="challenge-section">
+            <div class="strategy-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border-color: #F59E0B;">
+              <h3 style="color: #92400E; margin: 0 0 12px 0; font-size: 16px; font-weight: 700;">🗣 Challenge the Coach</h3>
+              <textarea id="userChallenge" rows="2" placeholder="Why did you bench my star player?" style="margin-bottom: 12px;"></textarea>
+              <button class="btn btn-warning" style="width: 100%;" onclick="challengeCoach()">
+                Submit Challenge
+              </button>
+            </div>
+          </div>
+        `;
+        
+        // Starting Lineup - THIRD (Organized by Position)
         html += '<div class="starters-grid">';
         Object.entries(data.recommended_starters).forEach(([pos, players]) => {
           html += `
@@ -1567,7 +1587,7 @@
         });
         html += '</div>';
 
-        // Bench Section
+        // Bench Section - FOURTH
         if (data.bench && data.bench.length > 0) {
           html += `
             <div class="lineup-section">
@@ -1586,7 +1606,7 @@
           `;
         }
 
-        // Waiver Watch Section
+        // Waiver Watch Section - FIFTH
         if (data.waiver_watchlist && data.waiver_watchlist.length > 0) {
           html += `
             <div class="lineup-section">
@@ -1605,19 +1625,12 @@
           `;
         }
 
-        // Strategy Section
-        html += `
-          <div class="strategy-card">
-            <h3 class="strategy-title">🧠 Strategy Notes</h3>
-            <p class="strategy-text">${data.strategy_summary}</p>
-          </div>
-        `;
-
         html += '</div>';
 
         outputDiv.className = "output-card fade-in";
         outputDiv.innerHTML = html;
-        document.getElementById("challenge-area").style.display = "block";
+        
+        // Note: Challenge area is now built into the HTML above, so we don't need to show it separately
       } catch (error) {
         outputDiv.className = "output-card";
         outputDiv.innerHTML = '<div style="color: var(--error-red);">❌ Failed to get advice. Please try again.</div>';
@@ -1628,7 +1641,6 @@
     function toggleConfig() {
       document.getElementById("config-area").style.display = "block";
       document.getElementById("back-btn").style.display = "none";
-      document.getElementById("challenge-area").style.display = "none";
       document.getElementById("rebuttal").style.display = "none";
       document.getElementById("output").style.display = "none";
     }
