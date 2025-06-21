@@ -52,6 +52,10 @@
     button:hover {
       background: #222;
     }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
     .button-row {
       display: flex;
       flex-wrap: wrap;
@@ -64,6 +68,69 @@
     .button-row button:hover {
       background: #333;
     }
+
+    /* Roster Builder Styles */
+    .roster-section {
+      margin-top: 20px;
+    }
+    .position-group {
+      margin-bottom: 20px;
+      padding: 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .position-header {
+      font-weight: 600;
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .position-count {
+      font-size: 14px;
+      color: #666;
+      font-weight: normal;
+    }
+    .player-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .player-row input {
+      flex: 1;
+      margin-top: 0;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    .remove-player {
+      background: #ff4444;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 0;
+      min-width: 60px;
+    }
+    .add-player {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .add-player:disabled {
+      background: #ccc;
+    }
+
     h2 {
       margin-top: 32px;
       font-size: 22px;
@@ -155,6 +222,13 @@
         padding: 12px;
       }
       h1 { font-size: 22px; }
+      .player-row {
+        flex-direction: column;
+        gap: 4px;
+      }
+      .remove-player {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -182,21 +256,24 @@
       <label>Notes (Optional)</label>
       <input id="notes" placeholder="e.g. Good matchup, rain expected, injuries...">
 
-      <label>Paste Your Roster JSON</label>
-      <textarea id="roster" rows="10" placeholder='{"QB":["..."],"RB":["..."],...}'></textarea>
-
-      <div class="button-row">
-        <button onclick="loadSampleRoster('ppr')">📋 Load PPR Roster</button>
-        <button onclick="loadSampleRoster('2qb')">📋 Load 2QB Roster</button>
-        <button onclick="loadSampleRoster('random')">🎲 Random Roster</button>
-        <button onclick="clearRoster()">🧹 Clear Roster</button>
+      <div class="roster-section">
+        <label>Build Your Roster</label>
+        <div class="button-row">
+          <button onclick="loadSampleRoster('ppr')">📋 Load PPR Sample</button>
+          <button onclick="loadSampleRoster('2qb')">📋 Load 2QB Sample</button>
+          <button onclick="clearRoster()">🧹 Clear All</button>
+        </div>
+        
+        <div id="roster-builder">
+          <!-- Roster positions will be dynamically generated here -->
+        </div>
       </div>
 
       <button onclick="getAdvice()">🔍 Get Lineup Advice</button>
     </div>
 
     <h2>📋 Advice</h2>
-    <div id="output" class="output">Waiting...</div>
+    <div id="output" class="output">Add some players to your roster above to get started!</div>
 
     <div id="challenge-area" style="margin-top:20px;display:none;">
       <label>Challenge the Coach</label>
@@ -209,23 +286,148 @@
     <div id="rebuttal" class="output" style="margin-top:20px;display:none;"></div>
 
     <script>
+      // Roster management
+      let roster = {
+        QB: [],
+        RB: [],
+        WR: [],
+        TE: [],
+        FLEX: [],
+        BENCH: []
+      };
+
+      const positionLimits = {
+        QB: 3,
+        RB: 6,
+        WR: 6,
+        TE: 3,
+        FLEX: 2,
+        BENCH: 8
+      };
+
+      const sampleRosters = {
+        ppr: {
+          QB: ['Josh Allen'],
+          RB: ['Christian McCaffrey', 'Saquon Barkley'],
+          WR: ['Tyreek Hill', 'Stefon Diggs', 'Mike Evans'],
+          TE: ['Travis Kelce'],
+          FLEX: ['Tony Pollard'],
+          BENCH: ['Tua Tagovailoa', 'James Conner', 'Jerry Jeudy']
+        },
+        '2qb': {
+          QB: ['Josh Allen', 'Lamar Jackson'],
+          RB: ['Austin Ekeler', 'Josh Jacobs'],
+          WR: ['Cooper Kupp', 'Davante Adams'],
+          TE: ['Mark Andrews'],
+          FLEX: ['Amari Cooper'],
+          BENCH: ['Geno Smith', 'Rhamondre Stevenson']
+        }
+      };
+
       document.getElementById("format").addEventListener("change", function() {
         document.getElementById("custom-format-wrapper").style.display =
           this.value === "Custom" ? "block" : "none";
       });
 
+      function renderRosterBuilder() {
+        const container = document.getElementById('roster-builder');
+        container.innerHTML = '';
+
+        Object.keys(positionLimits).forEach(position => {
+          const positionDiv = document.createElement('div');
+          positionDiv.className = 'position-group';
+          
+          const headerDiv = document.createElement('div');
+          headerDiv.className = 'position-header';
+          headerDiv.innerHTML = `
+            ${position}
+            <span class="position-count">${roster[position].length}/${positionLimits[position]}</span>
+          `;
+          positionDiv.appendChild(headerDiv);
+
+          // Add existing players
+          roster[position].forEach((player, index) => {
+            const playerRow = document.createElement('div');
+            playerRow.className = 'player-row';
+            playerRow.innerHTML = `
+              <input type="text" value="${player}" onchange="updatePlayer('${position}', ${index}, this.value)" placeholder="Enter player name">
+              <button class="remove-player" onclick="removePlayer('${position}', ${index})">Remove</button>
+            `;
+            positionDiv.appendChild(playerRow);
+          });
+
+          // Add button to add more players
+          if (roster[position].length < positionLimits[position]) {
+            const addButton = document.createElement('button');
+            addButton.className = 'add-player';
+            addButton.textContent = `+ Add ${position}`;
+            addButton.onclick = () => addPlayer(position);
+            positionDiv.appendChild(addButton);
+          }
+
+          container.appendChild(positionDiv);
+        });
+      }
+
+      function addPlayer(position) {
+        if (roster[position].length < positionLimits[position]) {
+          roster[position].push('');
+          renderRosterBuilder();
+          // Focus on the new input
+          setTimeout(() => {
+            const newInputs = document.querySelectorAll(`input[onchange*="${position}"]`);
+            const lastInput = newInputs[newInputs.length - 1];
+            if (lastInput) lastInput.focus();
+          }, 100);
+        }
+      }
+
+      function removePlayer(position, index) {
+        roster[position].splice(index, 1);
+        renderRosterBuilder();
+      }
+
+      function updatePlayer(position, index, value) {
+        roster[position][index] = value;
+      }
+
       function loadSampleRoster(type) {
-        const ppr = {"QB":["Kirk Cousins"],"RB":["Bijan Robinson"],"WR":["Tyreek Hill"],"TE":["Sam LaPorta"],"FLEX":["Christian Kirk"],"BENCH":["Najee Harris"]};
-        const qb2 = {"QB":["Tua Tagovailoa","Jordan Love"],"RB":["Josh Jacobs"],"WR":["Keenan Allen"],"TE":["David Njoku"],"FLEX":["Zay Flowers"],"BENCH":["Brian Robinson Jr."]};
-        const sampleType = type === "2qb" ? qb2 : ppr;
-        document.getElementById("roster").value = JSON.stringify(sampleType, null, 2);
+        roster = JSON.parse(JSON.stringify(sampleRosters[type]));
+        // Ensure all positions exist
+        Object.keys(positionLimits).forEach(pos => {
+          if (!roster[pos]) roster[pos] = [];
+        });
+        renderRosterBuilder();
       }
 
       function clearRoster() {
-        document.getElementById("roster").value = "";
+        Object.keys(roster).forEach(pos => {
+          roster[pos] = [];
+        });
+        renderRosterBuilder();
+      }
+
+      function buildRosterJSON() {
+        // Filter out empty player names and empty position arrays
+        const cleanRoster = {};
+        Object.keys(roster).forEach(pos => {
+          const players = roster[pos].filter(p => p && p.trim() !== '');
+          if (players.length > 0) {
+            cleanRoster[pos] = players;
+          }
+        });
+        return cleanRoster;
       }
 
       async function getAdvice() {
+        const rosterData = buildRosterJSON();
+        
+        // Check if roster has any players
+        if (Object.keys(rosterData).length === 0) {
+          alert("⚠️ Please add some players to your roster first!");
+          return;
+        }
+
         document.getElementById("config-area").style.display = "none";
         document.getElementById("back-btn").style.display = "inline-block";
         const out = document.getElementById("output");
@@ -237,35 +439,37 @@
         const fullFormat = format === "Custom" ? `Custom: ${custom}` : format;
         const notes = document.getElementById("notes").value;
 
-        let roster;
         try {
-          roster = JSON.parse(document.getElementById("roster").value);
-        } catch {
-          alert("⚠️ Invalid JSON roster.");
-          return;
+          const res = await fetch("/recommend", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ 
+              scoring_format: fullFormat, 
+              notes, 
+              roster: rosterData 
+            })
+          });
+          
+          const data = await res.json();
+
+          if (data.error) {
+            out.innerHTML = "⚠️ " + data.error;
+            return;
+          }
+
+          let html = '';
+          Object.entries(data.recommended_starters).forEach(([pos, players]) => {
+            html += `<div class="pos">${pos}</div><ul class="recommended">${players.map(p => `<li>${p}</li>`).join("")}</ul>`;
+          });
+          html += `<div class="pos">Bench</div><ul class="bench">${data.bench.map(p => `<li>${p}</li>`).join("")}</ul>`;
+          html += `<div class="pos">Waiver</div><ul class="waiver">${data.waiver_watchlist.map(p => `<li>${p}</li>`).join("")}</ul>`;
+
+          out.innerHTML = `<div class="bubble bubble-advice">${html}<p class="strategy">${data.strategy_summary}</p></div>`;
+          document.getElementById("challenge-area").style.display = "block";
+        } catch (error) {
+          out.innerHTML = "❌ Failed to get advice. Please try again.";
+          console.error('Error:', error);
         }
-
-        const res = await fetch("/recommend", {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ scoring_format: fullFormat, notes, roster })
-        });
-        const data = await res.json();
-
-        if (data.error) {
-          out.innerHTML = "⚠️ " + data.error;
-          return;
-        }
-
-        let html = '';
-        Object.entries(data.recommended_starters).forEach(([pos, players]) => {
-          html += `<div class="pos">${pos}</div><ul class="recommended">${players.map(p => `<li>${p}</li>`).join("")}</ul>`;
-        });
-        html += `<div class="pos">Bench</div><ul class="bench">${data.bench.map(p => `<li>${p}</li>`).join("")}</ul>`;
-        html += `<div class="pos">Waiver</div><ul class="waiver">${data.waiver_watchlist.map(p => `<li>${p}</li>`).join("")}</ul>`;
-
-        out.innerHTML = `<div class="bubble bubble-advice">${html}<p class="strategy">${data.strategy_summary}</p></div>`;
-        document.getElementById("challenge-area").style.display = "block";
       }
 
       function toggleConfig() {
@@ -273,7 +477,7 @@
         document.getElementById("back-btn").style.display = "none";
         document.getElementById("challenge-area").style.display = "none";
         document.getElementById("rebuttal").style.display = "none";
-        document.getElementById("output").innerHTML = "Waiting...";
+        document.getElementById("output").innerHTML = "Add some players to your roster above to get started!";
       }
 
       async function challengeCoach() {
@@ -307,7 +511,16 @@
           const res = await fetch("/challenge", {
             method: "POST",
             headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({ advice: {recommended_starters: starters, bench, waiver_watchlist: waiver, strategy_summary: summary}, scoring_format: fullFormat, user_challenge: userPrompt })
+            body: JSON.stringify({ 
+              advice: {
+                recommended_starters: starters, 
+                bench, 
+                waiver_watchlist: waiver, 
+                strategy_summary: summary
+              }, 
+              scoring_format: fullFormat, 
+              user_challenge: userPrompt 
+            })
           });
           const data = await res.json();
           rebuttalBox.innerHTML = data.error
@@ -321,6 +534,9 @@
           rebuttalBox.style.transform = "translateY(0)";
         }
       }
+
+      // Initialize the roster builder on page load
+      renderRosterBuilder();
     </script>
 
   </div>
