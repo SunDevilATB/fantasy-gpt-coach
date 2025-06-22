@@ -1,16 +1,6 @@
 import os
 import json
 import logging
-import time
-import hashlib
-import threading
-import requests
-import difflib
-import re
-from datetime import datetime, timedelta
-from functools import wraps
-from collections import defaultdict
-from urllib.parse import quote
 from flask import Flask, request, jsonify, send_from_directory
 from openai import OpenAI
 from typing import Dict, Any, Optional
@@ -21,59 +11,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
-# =============================================================================
-# CONFIGURATION & GLOBALS
-# =============================================================================
-
-# Caching configuration
-cache = {}
-CACHE_TTL = 3600  # 1 hour in seconds
-
-# Rate limiting and cost controls
-request_counts = defaultdict(list)  # IP -> [timestamps]
-daily_api_calls = {'count': 0, 'date': datetime.now().date()}
-monthly_budget = 100  # $100 monthly limit
-api_call_cost = 0.03  # Rough cost per call
-counter_lock = threading.Lock()
-
-# Player data configuration
-SLEEPER_API_BASE = "https://api.sleeper.app/v1"
-PLAYER_DATA_TTL = 24 * 3600  # 24 hours
-player_data_cache = {'data': None, 'timestamp': 0}
-
-# Injury data configuration
-INJURY_DATA_TTL = 3600  # 1 hour cache for injury data
-injury_data_cache = {'data': None, 'timestamp': 0}
-
-# Retry configuration
-MAX_RETRIES = 3
-RETRY_DELAY = 2  # seconds
-
-# Injury status mappings
-INJURY_STATUS_COLORS = {
-    'healthy': 'green',
-    'questionable': 'yellow', 
-    'doubtful': 'yellow',
-    'out': 'red',
-    'ir': 'red',
-    'suspended': 'red',
-    'covid': 'yellow'
-}
-
-INJURY_STATUS_BADGES = {
-    'healthy': '',
-    'questionable': 'Q',
-    'doubtful': 'D', 
-    'out': 'O',
-    'ir': 'IR',
-    'suspended': 'SUS',
-    'covid': 'COV'
-}
-
-# =============================================================================
-# OPENAI CLIENT SETUP
-# =============================================================================
-
+# Validate environment variables on startup
 def validate_env():
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -84,573 +22,8 @@ try:
     client = OpenAI(api_key=validate_env())
 except ValueError as e:
     logger.error(f"Configuration error: {e}")
+    # In production, you might want to exit here
     client = None
-
-# =============================================================================
-# RETRY LOGIC & ERROR HANDLING
-# =============================================================================
-
-def retry_on_failure(max_retries=MAX_RETRIES, delay=RETRY_DELAY):
-    """Decorator for retrying failed API calls"""
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            last_exception = None
-            
-            for attempt in range(max_retries):
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    last_exception = e
-                    logger.warning(f"Attempt {attempt + 1}/{max_retries} failed: {str(e)}")
-                    
-                    if attempt < max_retries - 1:  # Don't sleep on last attempt
-                        time.sleep(delay * (2 ** attempt))  # Exponential backoff
-                    
-            # All retries failed
-            logger.error(f"All {max_retries} attempts failed: {str(last_exception)}")
-            raise last_exception
-        return wrapper
-    return decorator
-
-@retry_on_failure(max_retries=3, delay=2)
-def call_openai_api(messages, model="gpt-4o", temperature=0.7, max_tokens=1000):
-    """Robust OpenAI API call with retries and timeouts"""
-    try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=30  # 30 second timeout
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        logger.error(f"OpenAI API error: {str(e)}")
-        raise
-
-# =============================================================================
-# RATE LIMITING & COST CONTROLS
-# =============================================================================
-
-def check_rate_limit(ip_address, max_requests=10, window_minutes=10):
-    """Check if IP has exceeded rate limit"""
-    with counter_lock:
-        now = datetime.now()
-        cutoff = now - timedelta(minutes=window_minutes)
-        
-        # Clean old requests
-        request_counts[ip_address] = [
-            timestamp for timestamp in request_counts[ip_address] 
-            if timestamp > cutoff
-        ]
-        
-        # Check current count
-        if len(request_counts[ip_address]) >= max_requests:
-            return False
-        
-        # Add current request
-        request_counts[ip_address].append(now)
-        return True
-
-def check_daily_budget():
-    """Check if we've hit daily spending limits"""
-    with counter_lock:
-        today = datetime.now().date()
-        
-        # Reset counter if new day
-        if daily_api_calls['date'] != today:
-            daily_api_calls['count'] = 0
-            daily_api_calls['date'] = today
-        
-        # Check limits
-        daily_cost = daily_api_calls['count'] * api_call_cost
-        daily_limit = monthly_budget / 30  # Rough daily limit
-        
-        if daily_cost >= daily_limit:
-            logger.warning(f"Daily budget exceeded: ${daily_cost:.2f}")
-            return False
-            
-        return True
-
-def increment_api_usage():
-    """Track API usage for cost monitoring"""
-    with counter_lock:
-        daily_api_calls['count'] += 1
-        logger.info(f"API calls today: {daily_api_calls['count']}, "
-                   f"estimated cost: ${daily_api_calls['count'] * api_call_cost:.2f}")
-
-# =============================================================================
-# PLAYER DATA MANAGEMENT
-# =============================================================================
-
-def fetch_fresh_player_data():
-    """Fetch current player data from Sleeper API"""
-    try:
-        # Get all NFL players from Sleeper
-        response = requests.get(f"{SLEEPER_API_BASE}/players/nfl", timeout=10)
-        response.raise_for_status()
-        
-        players_data = response.json()
-        
-        # Transform to our format
-        fresh_database = {
-            'QB': [],
-            'RB': [],
-            'WR': [],
-            'TE': []
-        }
-        
-        fresh_teams = {}
-        
-        for player_id, player_info in players_data.items():
-            if not player_info.get('active', False):
-                continue
-                
-            name = f"{player_info.get('first_name', '')} {player_info.get('last_name', '')}".strip()
-            position = player_info.get('position', '')
-            team = player_info.get('team', '')
-            
-            if position in fresh_database and name:
-                fresh_database[position].append(name)
-                fresh_teams[name] = team
-        
-        # Sort players by name
-        for position in fresh_database:
-            fresh_database[position].sort()
-        
-        logger.info(f"Fetched fresh player data: {sum(len(players) for players in fresh_database.values())} players")
-        return fresh_database, fresh_teams
-        
-    except Exception as e:
-        logger.error(f"Failed to fetch fresh player data: {e}")
-        return None, None
-
-def get_current_player_data():
-    """Get current player data with caching"""
-    current_time = time.time()
-    
-    # Check if we have fresh data
-    if (player_data_cache['data'] and 
-        current_time - player_data_cache['timestamp'] < PLAYER_DATA_TTL):
-        return player_data_cache['data']
-    
-    # Try to fetch fresh data
-    fresh_db, fresh_teams = fetch_fresh_player_data()
-    
-    if fresh_db and fresh_teams:
-        # Update cache
-        player_data_cache['data'] = (fresh_db, fresh_teams)
-        player_data_cache['timestamp'] = current_time
-        
-        logger.info("Updated player database with fresh data")
-        return fresh_db, fresh_teams
-    else:
-        # Fall back to static data (your original database)
-        logger.warning("Using static player data - API fetch failed")
-        return get_fallback_player_data()
-
-def get_fallback_player_data():
-    """Fallback to your original static player database"""
-    # Your original player database as fallback
-    playerDatabase = {
-        'QB': [
-            'Josh Allen', 'Lamar Jackson', 'Patrick Mahomes', 'Joe Burrow', 'Jalen Hurts',
-            'Justin Herbert', 'Dak Prescott', 'Tua Tagovailoa', 'Kyler Murray', 'Russell Wilson',
-            'Aaron Rodgers', 'Geno Smith', 'Kirk Cousins', 'Trevor Lawrence', 'Anthony Richardson',
-            'Brock Purdy', 'Jared Goff', 'Daniel Jones', 'Derek Carr', 'Justin Fields',
-            'C.J. Stroud', 'Kenny Pickett', 'Deshaun Watson', 'Ryan Tannehill', 'Mac Jones',
-            'Bryce Young', 'Will Levis', 'Sam Howell', 'Baker Mayfield', 'Jordan Love',
-            'Aidan O\'Connell', 'Tommy DeVito', 'Mason Rudolph', 'Gardner Minshew', 'Jacoby Brissett',
-            'Jayden Daniels', 'Caleb Williams', 'Drake Maye', 'Bo Nix', 'J.J. McCarthy', 'Michael Penix Jr.',
-            'Cam Ward', 'Dillon Gabriel', 'Shedeur Sanders', 'Jalen Milroe', 'Quinn Ewers'
-        ],
-        'RB': [
-            'Christian McCaffrey', 'Austin Ekeler', 'Derrick Henry', 'Josh Jacobs', 'Nick Chubb',
-            'Saquon Barkley', 'Tony Pollard', 'Aaron Jones', 'Joe Mixon', 'Kenneth Walker III',
-            'Najee Harris', 'Alvin Kamara', 'James Conner', 'Travis Etienne', 'D\'Andre Swift',
-            'Javonte Williams', 'Rachaad White', 'Jerome Ford', 'Isiah Pacheco', 'Breece Hall',
-            'Jonathan Taylor', 'James Cook', 'Brian Robinson Jr.', 'Gus Edwards', 'Chuba Hubbard',
-            'Roschon Johnson', 'Tank Bigsby', 'Jaylen Warren', 'Justice Hill', 'Rico Dowdle',
-            'Kenneth Gainwell', 'Devin Singletary', 'Jordan Mason', 'Ty Chandler', 'AJ Dillon',
-            'Zamir White', 'Tyler Allgeier', 'Khalil Herbert', 'Zack Moss', 'Cam Akers',
-            'Ashton Jeanty', 'Omarion Hampton', 'Blake Corum', 'Trey Benson', 'Braelon Allen'
-        ],
-        'WR': [
-            'Tyreek Hill', 'Stefon Diggs', 'Davante Adams', 'Cooper Kupp', 'DeAndre Hopkins',
-            'A.J. Brown', 'Mike Evans', 'Keenan Allen', 'Amari Cooper', 'Tyler Lockett',
-            'DK Metcalf', 'CeeDee Lamb', 'Ja\'Marr Chase', 'Justin Jefferson', 'Amon-Ra St. Brown',
-            'Puka Nacua', 'Chris Olave', 'Garrett Wilson', 'Jaylen Waddle', 'Terry McLaurin',
-            'Calvin Ridley', 'DJ Moore', 'Michael Pittman Jr.', 'Courtland Sutton', 'Tee Higgins',
-            'Jerry Jeudy', 'Drake London', 'Chris Godwin', 'Deebo Samuel', 'DeVonta Smith',
-            'Zay Flowers', 'George Pickens', 'Tank Dell', 'Nico Collins', 'Christian Watson',
-            'Romeo Doubs', 'Jordan Addison', 'Rashee Rice', 'Josh Palmer', 'Marquise Goodwin',
-            'Malik Nabers', 'Rome Odunze', 'Marvin Harrison Jr.', 'Brian Thomas Jr.', 'Xavier Worthy',
-            'Ladd McConkey', 'Keon Coleman', 'Xavier Legette', 'Ricky Pearsall', 'Ja\'Lynn Polk',
-            'Travis Hunter', 'Emeka Egbuka', 'Matthew Golden'
-        ],
-        'TE': [
-            'Travis Kelce', 'Mark Andrews', 'T.J. Hockenson', 'George Kittle', 'Kyle Pitts',
-            'Dallas Goedert', 'Evan Engram', 'Sam LaPorta', 'David Njoku', 'Pat Freiermuth',
-            'Jake Ferguson', 'Dawson Knox', 'Cole Kmet', 'Trey McBride', 'Tyler Higbee',
-            'Gerald Everett', 'Noah Fant', 'Hunter Henry', 'Mike Gesicki', 'Isaiah Likely',
-            'Luke Musgrave', 'Tucker Kraft', 'Will Dissly', 'Tyler Conklin', 'Cade Otton',
-            'Brock Bowers', 'Dalton Kincaid', 'Michael Mayer', 'Tyler Warren', 'Colston Loveland'
-        ]
-    }
-    
-    playerTeams = {
-        'Josh Allen': 'BUF', 'Lamar Jackson': 'BAL', 'Patrick Mahomes': 'KC', 'Joe Burrow': 'CIN',
-        'Jalen Hurts': 'PHI', 'Justin Herbert': 'LAC', 'Dak Prescott': 'DAL', 'Tua Tagovailoa': 'MIA',
-        'Jayden Daniels': 'WSH', 'Caleb Williams': 'CHI', 'Drake Maye': 'NE', 'Bo Nix': 'DEN',
-        'Christian McCaffrey': 'SF', 'Saquon Barkley': 'PHI', 'Josh Jacobs': 'GB', 'Derrick Henry': 'BAL',
-        'Austin Ekeler': 'WSH', 'Tony Pollard': 'TEN', 'Aaron Jones': 'MIN', 'Joe Mixon': 'HOU',
-        'Tyreek Hill': 'MIA', 'Stefon Diggs': 'HOU', 'CeeDee Lamb': 'DAL', 'Ja\'Marr Chase': 'CIN',
-        'Justin Jefferson': 'MIN', 'A.J. Brown': 'PHI', 'Mike Evans': 'TB', 'Davante Adams': 'LV',
-        'Travis Kelce': 'KC', 'Mark Andrews': 'BAL', 'George Kittle': 'SF', 'Sam LaPorta': 'DET',
-        'T.J. Hockenson': 'MIN', 'Kyle Pitts': 'ATL', 'Dallas Goedert': 'PHI', 'Brock Bowers': 'LV'
-    }
-    
-    return playerDatabase, playerTeams
-
-# =============================================================================
-# INJURY DATA MANAGEMENT
-# =============================================================================
-
-def fetch_injury_data():
-    """Fetch current injury data from ESPN API"""
-    try:
-        # ESPN's injury report endpoint
-        url = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news"
-        params = {
-            'categories': 'injuries',
-            'limit': 200
-        }
-        
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        
-        data = response.json()
-        injury_status = {}
-        
-        # Parse injury reports
-        for article in data.get('articles', []):
-            headline = article.get('headline', '').lower()
-            description = article.get('description', '').lower()
-            
-            # Look for player names and injury keywords
-            for athlete in article.get('athletes', []):
-                player_name = athlete.get('displayName', '')
-                if not player_name:
-                    continue
-                
-                # Determine injury status from headline/description
-                status = 'healthy'
-                text_to_check = f"{headline} {description}".lower()
-                
-                if any(word in text_to_check for word in ['out', 'ruled out', 'will not play']):
-                    status = 'out'
-                elif any(word in text_to_check for word in ['questionable', 'game-time decision']):
-                    status = 'questionable'
-                elif any(word in text_to_check for word in ['doubtful', 'unlikely']):
-                    status = 'doubtful'
-                elif any(word in text_to_check for word in ['injured reserve', 'ir', 'season-ending']):
-                    status = 'ir'
-                elif any(word in text_to_check for word in ['suspended', 'suspension']):
-                    status = 'suspended'
-                elif any(word in text_to_check for word in ['covid', 'protocol']):
-                    status = 'covid'
-                
-                injury_status[player_name] = {
-                    'status': status,
-                    'description': article.get('headline', ''),
-                    'updated': datetime.now().isoformat()
-                }
-        
-        logger.info(f"Fetched injury data for {len(injury_status)} players")
-        return injury_status
-        
-    except Exception as e:
-        logger.error(f"Failed to fetch injury data from ESPN: {e}")
-        
-        # Fallback: Try NFL.com injury report
-        try:
-            return fetch_nfl_injury_data()
-        except Exception as e2:
-            logger.error(f"Failed to fetch from NFL.com backup: {e2}")
-            return {}
-
-def fetch_nfl_injury_data():
-    """Backup injury data from NFL.com"""
-    try:
-        # NFL.com injury report (simpler format)
-        url = "https://www.nfl.com/injuries/"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-        
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        
-        # Parse HTML for injury data (basic implementation)
-        # In production, you'd want a more robust parser
-        injury_status = {}
-        
-        # Look for common injury patterns in the HTML
-        content = response.text.lower()
-        
-        # This is a simplified parser - in production you'd use BeautifulSoup
-        # For now, return empty dict and rely on ESPN
-        logger.info("NFL.com injury data parsing not fully implemented")
-        return {}
-        
-    except Exception as e:
-        logger.error(f"NFL.com injury fetch failed: {e}")
-        return {}
-
-def get_current_injury_data():
-    """Get current injury data with caching"""
-    current_time = time.time()
-    
-    # Check if we have fresh injury data (1 hour cache)
-    if (injury_data_cache['data'] and 
-        current_time - injury_data_cache['timestamp'] < INJURY_DATA_TTL):
-        return injury_data_cache['data']
-    
-    # Fetch fresh injury data
-    fresh_injury_data = fetch_injury_data()
-    
-    if fresh_injury_data:
-        # Update cache
-        injury_data_cache['data'] = fresh_injury_data
-        injury_data_cache['timestamp'] = current_time
-        logger.info("Updated injury data cache")
-    else:
-        # If fetch failed but we have old data, use it
-        if injury_data_cache['data']:
-            logger.warning("Using stale injury data - fetch failed")
-        else:
-            logger.warning("No injury data available")
-            injury_data_cache['data'] = {}
-    
-    return injury_data_cache['data']
-
-def get_player_injury_status(player_name):
-    """Get injury status for a specific player"""
-    injury_data = get_current_injury_data()
-    
-    # Try exact match first
-    if player_name in injury_data:
-        return injury_data[player_name]
-    
-    # Try fuzzy matching for injury data
-    for injured_player, status_info in injury_data.items():
-        similarity = difflib.SequenceMatcher(None, player_name.lower(), injured_player.lower()).ratio()
-        if similarity > 0.9:  # Very high confidence for injury data
-            return status_info
-    
-    # Default to healthy if no injury info found
-    return {
-        'status': 'healthy',
-        'description': '',
-        'updated': datetime.now().isoformat()
-    }
-
-# =============================================================================
-# PLAYER NAME VALIDATION & AUTO-CORRECTION
-# =============================================================================
-
-def find_closest_player_match(input_name, position=None):
-    """Find the closest matching player name with fuzzy matching"""
-    try:
-        player_db, _ = get_current_player_data()
-        
-        # Get all players or just from specific position
-        if position and position in player_db:
-            candidates = player_db[position]
-        else:
-            candidates = []
-            for pos_players in player_db.values():
-                candidates.extend(pos_players)
-        
-        if not candidates:
-            return None, 0
-        
-        # Find best match using difflib
-        matches = difflib.get_close_matches(
-            input_name, 
-            candidates, 
-            n=1, 
-            cutoff=0.6  # 60% similarity threshold
-        )
-        
-        if matches:
-            best_match = matches[0]
-            similarity = difflib.SequenceMatcher(None, input_name.lower(), best_match.lower()).ratio()
-            return best_match, similarity
-        
-        return None, 0
-        
-    except Exception as e:
-        logger.error(f"Player matching error: {e}")
-        return None, 0
-
-def validate_and_correct_roster(roster):
-    """Validate player names and suggest corrections (now with injury awareness)"""
-    corrections = {}
-    validated_roster = {}
-    injury_warnings = {}
-    
-    for position, players in roster.items():
-        validated_roster[position] = []
-        
-        for player_name in players:
-            if not player_name or not player_name.strip():
-                continue
-                
-            # Try exact match first
-            player_db, _ = get_current_player_data()
-            exact_match = False
-            
-            for pos_players in player_db.values():
-                if player_name in pos_players:
-                    validated_roster[position].append(player_name)
-                    exact_match = True
-                    
-                    # Check injury status for matched player
-                    injury_info = get_player_injury_status(player_name)
-                    if injury_info['status'] in ['out', 'ir', 'doubtful']:
-                        injury_warnings[player_name] = injury_info
-                    
-                    break
-            
-            if not exact_match:
-                # Try fuzzy matching
-                suggested_name, similarity = find_closest_player_match(player_name, position)
-                
-                if suggested_name and similarity > 0.7:  # 70% confidence
-                    corrections[player_name] = {
-                        'suggested': suggested_name,
-                        'similarity': similarity,
-                        'position': position
-                    }
-                    validated_roster[position].append(suggested_name)
-                    logger.info(f"Auto-corrected '{player_name}' → '{suggested_name}' (similarity: {similarity:.2f})")
-                    
-                    # Check injury status for corrected player
-                    injury_info = get_player_injury_status(suggested_name)
-                    if injury_info['status'] in ['out', 'ir', 'doubtful']:
-                        injury_warnings[suggested_name] = injury_info
-                else:
-                    # Keep original if no good match found
-                    validated_roster[position].append(player_name)
-    
-    return validated_roster, corrections, injury_warnings
-
-# =============================================================================
-# CACHING SYSTEM
-# =============================================================================
-
-def create_request_hash(roster, scoring_format, notes):
-    """Create a hash of the request parameters for caching"""
-    cache_key = {
-        'roster': {k: sorted(v) for k, v in roster.items()},  # Sort player lists
-        'format': scoring_format,
-        'notes': notes.strip().lower() if notes else ""
-    }
-    cache_string = json.dumps(cache_key, sort_keys=True)
-    return hashlib.md5(cache_string.encode()).hexdigest()
-
-def get_cached_recommendation(roster, scoring_format, notes=""):
-    """Get recommendation with caching and error handling"""
-    request_hash = create_request_hash(roster, scoring_format, notes)
-    
-    # Check cache first
-    if request_hash in cache:
-        cached_result, timestamp = cache[request_hash]
-        if time.time() - timestamp < CACHE_TTL:
-            logger.info(f"Cache HIT: {request_hash[:8]}...")
-            return cached_result
-        else:
-            del cache[request_hash]
-    
-    try:
-# Enhanced prompt with better context
-current_week = "Week 1"  # You could make this dynamic
-prompt = f"""
-You are a sharp, opinionated fantasy football coach analyzing lineups for {current_week} of the 2024 NFL season.
-
-League Format: {scoring_format}
-Custom Notes: {notes or "None provided"}
-
-Here is the user's full roster:
-{json.dumps(roster, indent=2)}
-
-Instructions:
-- Select the optimal starting lineup considering matchups, injury status, and recent performance
-- Clearly separate players into: recommended_starters, bench, and waiver_watchlist
-- For FLEX positions, prioritize high-upside players with favorable matchups
-- Include 4-6 players to watch on waivers based on potential opportunity, injuries, or breakout potential
-- Provide a brief strategy_summary explaining your key decisions and any risky calls
-
-Respond ONLY in valid JSON format:
-{{
-  "recommended_starters": {{
-    "QB": ["..."],
-    "RB": ["...", "..."],
-    "WR": ["...", "..."],
-    "TE": ["..."],
-    "FLEX": ["..."]
-  }},
-  "bench": ["...", "..."],
-  "waiver_watchlist": ["Player1", "Player2", "Player3", "Player4", "Player5"],
-  "strategy_summary": "Brief explanation of key decisions and reasoning"
-}}
-"""
-
-        messages = [
-            {"role": "system", "content": "You are a fantasy football expert. Return only valid JSON with lineup recommendations."},
-            {"role": "user", "content": prompt}
-        ]
-
-        # Call OpenAI with retries
-        raw_response = call_openai_api(messages)
-        
-        # Clean and parse response
-        if raw_response.startswith("```json"):
-            raw_response = raw_response[7:]
-        if raw_response.endswith("```"):
-            raw_response = raw_response[:-3]
-        
-        try:
-            result = json.loads(raw_response)
-        except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON from OpenAI: {raw_response}")
-            raise ValueError("AI returned invalid response format")
-        
-        # Validate response structure
-        required_keys = ['recommended_starters', 'bench', 'waiver_watchlist', 'strategy_summary']
-        if not all(key in result for key in required_keys):
-            raise ValueError("AI response missing required fields")
-        
-        # Cache successful result
-        cache[request_hash] = (result, time.time())
-        return result
-        
-    except Exception as e:
-        logger.error(f"Recommendation generation failed: {str(e)}")
-        # Return a fallback response instead of crashing
-        return {
-            "recommended_starters": {"QB": [], "RB": [], "WR": [], "TE": [], "FLEX": []},
-            "bench": [],
-            "waiver_watchlist": [],
-            "strategy_summary": "Unable to generate recommendations at this time. Please try again in a few moments.",
-            "error": True
-        }
-
-# =============================================================================
-# VALIDATION FUNCTIONS
-# =============================================================================
 
 def validate_roster(roster: Dict[str, Any]) -> bool:
     """Validate roster structure and content."""
@@ -683,10 +56,6 @@ def get_scoring_format(data: Dict[str, Any]) -> str:
         return f"Custom: {custom_format}"
     return format_type
 
-# =============================================================================
-# ERROR HANDLERS
-# =============================================================================
-
 @app.errorhandler(400)
 def handle_bad_request(e):
     return jsonify({"error": "Bad request", "message": str(e)}), 400
@@ -696,10 +65,6 @@ def handle_internal_error(e):
     logger.error(f"Internal error: {e}")
     return jsonify({"error": "Internal server error"}), 500
 
-# =============================================================================
-# ROUTES
-# =============================================================================
-
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def serve_ui(path):
@@ -707,94 +72,10 @@ def serve_ui(path):
         return send_from_directory(app.static_folder, path)
     return send_from_directory(app.static_folder, "index.html")
 
-@app.route("/recommend", methods=["POST"])
-def recommend():
-    if not client:
-        return jsonify({"error": "OpenAI client not configured"}), 500
-    
-    # Get client IP
-    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    
-    # Check rate limiting
-    if not check_rate_limit(client_ip):
-        logger.warning(f"Rate limit exceeded for IP: {client_ip}")
-        return jsonify({
-            "error": "Too many requests. Please wait a few minutes before trying again."
-        }), 429
-    
-    # Check daily budget
-    if not check_daily_budget():
-        return jsonify({
-            "error": "Service temporarily unavailable. Please try again tomorrow."
-        }), 503
-    
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
-        
-        scoring_format = get_scoring_format(data)
-        notes = data.get("notes", "")
-        roster = data.get("roster", {})
-
-        # Validate roster structure
-        try:
-            validate_roster(roster)
-        except ValueError as e:
-            return jsonify({"error": f"Invalid roster: {str(e)}"}), 400
-
-        # Validate and auto-correct player names (now with injury checking)
-        validated_roster, corrections, injury_warnings = validate_and_correct_roster(roster)
-        
-        # If we made corrections, log them
-        if corrections:
-            logger.info(f"Auto-corrected player names: {corrections}")
-        
-        # Log injury warnings
-        if injury_warnings:
-            logger.info(f"Injury warnings for: {list(injury_warnings.keys())}")
-
-        # Increment usage counter before API call
-        increment_api_usage()
-        
-        # Get recommendation using validated roster
-        advice = get_cached_recommendation(validated_roster, scoring_format, notes)
-        
-        # Add corrections and injury warnings to response
-        if corrections:
-            advice['player_corrections'] = corrections
-        
-        if injury_warnings:
-            advice['injury_warnings'] = injury_warnings
-            advice['injury_message'] = f"⚠️ {len(injury_warnings)} player(s) have injury concerns"
-        
-        if corrections or injury_warnings:
-            messages = []
-            if corrections:
-                messages.append(f"Auto-corrected {len(corrections)} player name(s)")
-            if injury_warnings:
-                messages.append(f"{len(injury_warnings)} injury warning(s)")
-            advice['message'] = " • ".join(messages)
-        
-        # Log successful request
-        logger.info(f"Successful recommendation for IP: {client_ip}")
-        return jsonify(advice)
-
-    except json.JSONDecodeError:
-        return jsonify({"error": "Invalid JSON in request"}), 400
-    except Exception as e:
-        logger.error(f"Recommend endpoint error: {e}")
-        return jsonify({"error": "Failed to generate lineup recommendations"}), 500
-
 @app.route("/challenge", methods=["POST"])
 def challenge():
     if not client:
         return jsonify({"error": "OpenAI client not configured"}), 500
-    
-    # Get client IP and check rate limits
-    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    if not check_rate_limit(client_ip, max_requests=5, window_minutes=10):  # Lower limit for challenges
-        return jsonify({"error": "Too many challenge requests. Please wait before trying again."}), 429
     
     try:
         data = request.get_json()
@@ -831,12 +112,14 @@ Return only the coach's verbal response (plain text, no JSON).
             {"role": "user", "content": prompt}
         ]
 
-        # Track API usage for challenges too
-        increment_api_usage()
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Updated to latest model
+            messages=messages,
+            temperature=0.9,
+            max_tokens=500  # Add token limit
+        )
         
-        # Use the robust API call
-        rebuttal = call_openai_api(messages, temperature=0.9, max_tokens=500)
-        
+        rebuttal = response.choices[0].message.content.strip()
         return jsonify({"rebuttal": rebuttal})
         
     except json.JSONDecodeError:
@@ -845,152 +128,113 @@ Return only the coach's verbal response (plain text, no JSON).
         logger.error(f"Challenge endpoint error: {e}")
         return jsonify({"error": "Failed to generate coach response"}), 500
 
-# =============================================================================
-# INJURY ENDPOINTS
-# =============================================================================
-
-@app.route("/injury-report", methods=["GET"])
-def injury_report():
-    """Get current injury report"""
+@app.route("/recommend", methods=["POST"])
+def recommend():
+    if not client:
+        return jsonify({"error": "OpenAI client not configured"}), 500
+    
     try:
-        injury_data = get_current_injury_data()
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
         
-        # Format for frontend
-        formatted_report = {}
-        for player, info in injury_data.items():
-            formatted_report[player] = {
-                'status': info['status'],
-                'description': info.get('description', ''),
-                'color': INJURY_STATUS_COLORS.get(info['status'], 'green'),
-                'badge': INJURY_STATUS_BADGES.get(info['status'], ''),
-                'updated': info.get('updated', '')
-            }
-        
-        return jsonify({
-            "injury_report": formatted_report,
-            "total_injured": len([p for p, i in injury_data.items() if i['status'] != 'healthy']),
-            "last_updated": injury_data_cache.get('timestamp', 0),
-            "cache_age_minutes": (time.time() - injury_data_cache.get('timestamp', 0)) / 60
-        })
-        
-    except Exception as e:
-        logger.error(f"Injury report error: {e}")
-        return jsonify({"error": "Failed to fetch injury report"}), 500
+        scoring_format = get_scoring_format(data)
+        notes = data.get("notes", "")
+        roster = data.get("roster", {})
 
-@app.route("/refresh-injuries", methods=["POST"])
-def refresh_injuries():
-    """Manually refresh injury data"""
-    try:
-        fresh_injury_data = fetch_injury_data()
-        if fresh_injury_data:
-            # Force update cache
-            injury_data_cache['data'] = fresh_injury_data
-            injury_data_cache['timestamp'] = time.time()
-            
-            injured_count = len([p for p, i in fresh_injury_data.items() if i['status'] != 'healthy'])
-            
-            return jsonify({
-                "status": "success",
-                "message": f"Updated injury data for {len(fresh_injury_data)} players",
-                "injured_players": injured_count,
-                "timestamp": datetime.now().isoformat()
-            })
-        else:
-            return jsonify({"error": "Failed to fetch fresh injury data"}), 500
-    except Exception as e:
-        logger.error(f"Manual injury refresh failed: {e}")
-        return jsonify({"error": str(e)}), 500
+        # Validate roster
+        try:
+            validate_roster(roster)
+        except ValueError as e:
+            return jsonify({"error": f"Invalid roster: {str(e)}"}), 400
 
-# =============================================================================
-# MONITORING ENDPOINTS
-# =============================================================================
+        # Enhanced prompt with better context
+        current_week = "Week 1"  # You could make this dynamic
+        prompt = f"""
+You are a sharp, opinionated fantasy football coach analyzing lineups for {current_week} of the 2024 NFL season.
+
+League Format: {scoring_format}
+Custom Notes: {notes or "None provided"}
+
+Here is the user's full roster:
+{json.dumps(roster, indent=2)}
+
+Instructions:
+- Select the optimal starting lineup considering matchups, injury status, and recent performance
+- Clearly separate players into: recommended_starters, bench, and waiver_watchlist
+- For FLEX positions, prioritize high-upside players with favorable matchups
+- Include 4-6 players to watch on waivers based on potential opportunity, injuries, or breakout potential
+- Provide a brief strategy_summary explaining your key decisions and any risky calls
+
+Respond ONLY in valid JSON format:
+{{
+  "recommended_starters": {{
+    "QB": ["..."],
+    "RB": ["...", "..."],
+    "WR": ["...", "..."],
+    "TE": ["..."],
+    "FLEX": ["..."]
+  }},
+  "bench": ["...", "..."],
+  "waiver_watchlist": ["Player1", "Player2", "Player3", "Player4", "Player5"],
+  "strategy_summary": "Brief explanation of key decisions and reasoning"
+}}
+"""
+
+        messages = [
+            {"role": "system", "content": "You are a fantasy football expert. Return only valid JSON with lineup recommendations."},
+            {"role": "user", "content": prompt}
+        ]
+
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Updated to latest model
+            messages=messages,
+            temperature=0.7,
+            max_tokens=1000
+        )
+
+        raw_response = response.choices[0].message.content.strip()
+        
+        # Clean up response (remove any markdown formatting)
+        if raw_response.startswith("```json"):
+            raw_response = raw_response[7:]
+        if raw_response.endswith("```"):
+            raw_response = raw_response[:-3]
+        
+        try:
+            advice = json.loads(raw_response)
+            
+            # Ensure waiver_watchlist always exists
+            if 'waiver_watchlist' not in advice or not advice['waiver_watchlist']:
+                # Fallback waiver recommendations
+                fallback_waivers = [
+                    'Tank Dell', 'Tyler Boyd', 'Roschon Johnson', 'Ty Chandler',
+                    'Demarcus Robinson', 'Noah Brown', 'Jordan Mason', 'Rico Dowdle',
+                    'Isaiah Likely', 'Tyler Conklin', 'Deon Jackson', 'Zay Jones'
+                ]
+                advice['waiver_watchlist'] = fallback_waivers[:5]  # Take first 5
+            
+            return jsonify(advice)
+        except json.JSONDecodeError as e:
+            logger.error(f"GPT returned invalid JSON: {raw_response}")
+            return jsonify({"error": "AI returned invalid response format"}), 500
+
+    except json.JSONDecodeError:
+        return jsonify({"error": "Invalid JSON in request"}), 400
+    except Exception as e:
+        logger.error(f"Recommend endpoint error: {e}")
+        return jsonify({"error": "Failed to generate lineup recommendations"}), 500
 
 @app.route("/health", methods=["GET"])
 def health_check():
     """Basic health check endpoint."""
-    injury_data_age = time.time() - injury_data_cache.get('timestamp', 0)
-    
     status = {
         "status": "healthy",
-        "openai_configured": client is not None,
-        "cache_entries": len(cache),
-        "player_data_fresh": time.time() - player_data_cache.get('timestamp', 0) < PLAYER_DATA_TTL,
-        "injury_data_fresh": injury_data_age < INJURY_DATA_TTL,
-        "injury_data_age_minutes": injury_data_age / 60,
-        "injured_players": len([p for p, i in injury_data_cache.get('data', {}).items() if i.get('status') != 'healthy'])
+        "openai_configured": client is not None
     }
     return jsonify(status)
 
-@app.route("/cache-stats", methods=["GET"])
-def cache_stats():
-    """Debug endpoint to see cache performance"""
-    if not cache:
-        return jsonify({"message": "Cache is empty"})
-    
-    current_time = time.time()
-    active_entries = sum(1 for _, (_, timestamp) in cache.items() 
-                        if current_time - timestamp < CACHE_TTL)
-    
-    return jsonify({
-        "total_entries": len(cache),
-        "active_entries": active_entries,
-        "expired_entries": len(cache) - active_entries,
-        "cache_ttl_hours": CACHE_TTL / 3600
-    })
-
-@app.route("/usage-stats", methods=["GET"])
-def usage_stats():
-    """Monitor API usage and costs"""
-    with counter_lock:
-        today_cost = daily_api_calls['count'] * api_call_cost
-        monthly_estimate = today_cost * 30
-        
-        return jsonify({
-            "daily_api_calls": daily_api_calls['count'],
-            "estimated_daily_cost": f"${today_cost:.2f}",
-            "estimated_monthly_cost": f"${monthly_estimate:.2f}",
-            "budget_status": "OK" if monthly_estimate < monthly_budget else "WARNING",
-            "active_ips": len(request_counts)
-        })
-
-@app.route("/refresh-players", methods=["POST"])
-def refresh_players():
-    """Manually refresh player data"""
-    try:
-        fresh_db, fresh_teams = fetch_fresh_player_data()
-        if fresh_db:
-            # Force update cache
-            player_data_cache['data'] = (fresh_db, fresh_teams)
-            player_data_cache['timestamp'] = time.time()
-            
-            return jsonify({
-                "status": "success",
-                "message": f"Updated {sum(len(players) for players in fresh_db.values())} players",
-                "timestamp": datetime.now().isoformat()
-            })
-        else:
-            return jsonify({"error": "Failed to fetch fresh data"}), 500
-    except Exception as e:
-        logger.error(f"Manual refresh failed: {e}")
-        return jsonify({"error": str(e)}), 500
-
-# =============================================================================
-# APP INITIALIZATION
-# =============================================================================
-
-def initialize_app():
-    """Initialize app with fresh player and injury data"""
-    logger.info("Initializing app with fresh player and injury data...")
-    try:
-        get_current_player_data()
-        get_current_injury_data()
-        logger.info("App initialized successfully")
-    except Exception as e:
-        logger.error(f"Failed to initialize data: {e}")
-        logger.info("App will use fallback static data")
-
 if __name__ == "__main__":
-    initialize_app()
     port = int(os.environ.get("PORT", 5000))
     debug = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
     app.run(host="0.0.0.0", port=port, debug=debug)
