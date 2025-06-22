@@ -116,7 +116,7 @@ Return only the coach's verbal response (plain text, no JSON).
             model="gpt-4o",  # Updated to latest model
             messages=messages,
             temperature=0.9,
-            max_tokens=500  # Add token limit
+            max_tokens=150  # Reduced from 500 to keep responses concise
         )
         
         rebuttal = response.choices[0].message.content.strip()

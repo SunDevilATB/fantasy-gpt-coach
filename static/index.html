@@ -1102,24 +1102,9 @@
               <input id="custom-format" placeholder="e.g. TE Premium, 3 FLEX, IDP">
             </div>
           </div>
-
-          <div class="form-group">
-            <label>Additional Notes</label>
-            <textarea id="notes" rows="2" placeholder="Weather concerns, injury updates, tough matchups..."></textarea>
-          </div>
         </div>
 
-        <!-- Weather Conditions Section -->
-        <div id="weather-section" class="section" style="display: none;">
-          <div class="weather-conditions">
-            <div class="weather-title">
-              🌦️ Weather Alerts
-            </div>
-            <div id="weather-games" class="weather-games">
-              <!-- Weather alerts will be populated here -->
-            </div>
-          </div>
-        </div>
+
 
         <div class="section">
           <div class="section-header">
@@ -1146,10 +1131,6 @@
 
       <div id="output" class="output-card" style="display: none;">
         <!-- Advice will appear here -->
-      </div>
-
-      <div id="rebuttal" class="output-card" style="display: none;">
-        <!-- Coach rebuttal will appear here -->
       </div>
     </div>
 
@@ -1273,23 +1254,6 @@
       if (rank >= 23) rankClass = 'bad';       // Bottom 10 = bad matchup
       
       return { rank, class: rankClass };
-    }
-
-    function displayWeatherAlerts() {
-      const weatherSection = document.getElementById('weather-section');
-      const weatherGames = document.getElementById('weather-games');
-      
-      if (weatherData.length > 0) {
-        weatherSection.style.display = 'block';
-        weatherGames.innerHTML = weatherData.map(game => `
-          <div class="weather-game ${game.severity}">
-            <span><strong>${game.game}</strong></span>
-            <span>${game.conditions}</span>
-          </div>
-        `).join('');
-      } else {
-        weatherSection.style.display = 'none';
-      }
     }
 
     function getRecommendedWaiverPickups() {
@@ -1438,14 +1402,28 @@
     async function sendPlayerChallenge(playerName, challenge) {
       closePlayerChallenge();
       
-      const rebuttalBox = document.getElementById("rebuttal");
+      const coachSection = document.getElementById("coach-response-section");
+      const coachText = document.getElementById("coach-response-text");
       const format = document.getElementById("format").value;
       const custom = document.getElementById("custom-format").value;
       const fullFormat = format === "Custom" ? `Custom: ${custom}` : format;
 
-      rebuttalBox.style.display = "block";
-      rebuttalBox.className = "output-card loading fade-in";
-      rebuttalBox.innerHTML = "Coach is preparing a response...";
+      // Show the coach response section
+      coachSection.style.display = "block";
+      
+      // Expand the section if collapsed
+      const toggle = document.querySelector('[data-section="coach-response"]');
+      const content = document.getElementById('coach-response-content');
+      toggle.classList.remove('collapsed');
+      toggle.classList.add('expanded');
+      content.classList.remove('collapsed');
+      content.classList.add('expanded');
+
+      coachText.innerHTML = `
+        <div class="loading" style="padding: 20px; text-align: center;">
+          Coach is preparing a response about ${playerName}...
+        </div>
+      `;
 
       try {
         const res = await fetch("/challenge", {
@@ -1464,16 +1442,24 @@
         });
         const data = await res.json();
         
-        rebuttalBox.className = "output-card fade-in";
-        rebuttalBox.innerHTML = data.error
-          ? `<div style="color: var(--error-red);">⚠️ ${data.error}</div>`
-          : `<div class="challenge-card">
-               <h3 class="challenge-title">🗯️ Coach's Response about ${playerName}</h3>
-               <p style="margin: 0; line-height: 1.5; color: #92400E;">${data.rebuttal}</p>
-             </div>`;
+        if (data.error) {
+          coachText.innerHTML = `<div style="color: var(--error-red);">⚠️ ${data.error}</div>`;
+        } else {
+          // Truncate response if too long (limit to ~200 characters)
+          let response = data.rebuttal;
+          if (response.length > 200) {
+            response = response.substring(0, 200) + "...";
+          }
+          
+          coachText.innerHTML = `
+            <h3 class="challenge-title" style="color: #92400E; margin: 0 0 8px 0; font-size: 16px; font-weight: 700;">
+              About ${playerName}
+            </h3>
+            <p style="margin: 0; line-height: 1.5; color: #92400E;">${response}</p>
+          `;
+        }
       } catch {
-        rebuttalBox.className = "output-card";
-        rebuttalBox.innerHTML = '<div style="color: var(--error-red);">❌ Coach failed to respond.</div>';
+        coachText.innerHTML = '<div style="color: var(--error-red);">❌ Coach failed to respond.</div>';
       }
     }
 
@@ -2290,7 +2276,7 @@
       const format = document.getElementById("format").value;
       const custom = document.getElementById("custom-format").value;
       const fullFormat = format === "Custom" ? `Custom: ${custom}` : format;
-      const notes = document.getElementById("notes").value;
+      const notes = ""; // No additional notes section anymore
 
       try {
         const res = await fetch("/recommend", {
@@ -2322,7 +2308,46 @@
           </div>
         `;
 
-        // Starting Lineup - SECOND (Always expanded with confidence scores)
+        // Coach Response Section - SECOND (Collapsible, initially hidden)
+        html += `
+          <div id="coach-response-section" class="section-collapsible" style="display: none;">
+            <div class="section-toggle collapsed" data-section="coach-response" onclick="toggleSection('coach-response')">
+              <span class="section-toggle-title">🗯️ Coach's Response</span>
+              <span class="section-toggle-icon">▼</span>
+            </div>
+            <div id="coach-response-content" class="section-content collapsed">
+              <div class="section-content-inner">
+                <div id="coach-response-text" class="challenge-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border-color: #F59E0B; margin: 0;">
+                  <!-- Coach response will appear here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Weather Alerts Section - THIRD (Collapsible, collapsed by default)
+        if (weatherData.length > 0) {
+          html += `
+            <div class="section-collapsible">
+              <div class="section-toggle collapsed" data-section="weather" onclick="toggleSection('weather')">
+                <span class="section-toggle-title">🌦️ Weather Alerts</span>
+                <span class="section-toggle-icon">▼</span>
+              </div>
+              <div id="weather-content" class="section-content collapsed">
+                <div class="section-content-inner">
+                  ${weatherData.map(game => `
+                    <div class="weather-game ${game.severity}">
+                      <span><strong>${game.game}</strong></span>
+                      <span>${game.conditions}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // Starting Lineup - FOURTH (Always expanded with confidence scores)
         html += '<div class="starters-grid">';
         
         // Define the position order to match the roster builder
@@ -2376,7 +2401,7 @@
 
         html += '</div>';
 
-        // Defense Matchup Guide - THIRD (Collapsible, collapsed by default)
+        // Defense Matchup Guide - FIFTH (Collapsible, collapsed by default)
         html += `
           <div class="section-collapsible">
             <div class="section-toggle collapsed" data-section="defense-guide" onclick="toggleSection('defense-guide')">
@@ -2401,7 +2426,7 @@
           </div>
         `;
 
-        // Bench Section - FOURTH (Collapsible, collapsed by default)
+        // Bench Section - SIXTH (Collapsible, collapsed by default)
         if (data.bench && data.bench.length > 0) {
           html += `
             <div class="section-collapsible">
@@ -2431,7 +2456,7 @@
           `;
         }
 
-        // Waiver Watch Section - FIFTH (Collapsible, collapsed by default)
+        // Waiver Watch Section - SEVENTH (Collapsible, collapsed by default)
         const waiverPlayers = data.waiver_watchlist && data.waiver_watchlist.length > 0 
           ? data.waiver_watchlist 
           : getRecommendedWaiverPickups();
@@ -2489,8 +2514,14 @@
     function toggleConfig() {
       document.getElementById("config-area").style.display = "block";
       document.getElementById("back-btn").style.display = "none";
-      document.getElementById("rebuttal").style.display = "none";
       document.getElementById("output").style.display = "none";
+      
+      // Hide coach response section
+      const coachSection = document.getElementById("coach-response-section");
+      if (coachSection) {
+        coachSection.style.display = "none";
+      }
+      
       closePlayerChallenge(); // Close any open challenge modal
     }
 
@@ -2523,7 +2554,6 @@
       updatePositionLimits(); // Set correct limits for default format
       updateSavedTeamsDropdown(); // Load saved teams
       renderRosterBuilder();
-      displayWeatherAlerts(); // Show weather conditions
     });
   </script>
 </div>
