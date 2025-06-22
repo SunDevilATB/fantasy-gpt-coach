@@ -6,9 +6,11 @@ import hashlib
 import threading
 import requests
 import difflib
+import re
 from datetime import datetime, timedelta
 from functools import wraps
 from collections import defaultdict
+from urllib.parse import quote
 from flask import Flask, request, jsonify, send_from_directory
 from openai import OpenAI
 from typing import Dict, Any, Optional
@@ -39,9 +41,34 @@ SLEEPER_API_BASE = "https://api.sleeper.app/v1"
 PLAYER_DATA_TTL = 24 * 3600  # 24 hours
 player_data_cache = {'data': None, 'timestamp': 0}
 
+# Injury data configuration
+INJURY_DATA_TTL = 3600  # 1 hour cache for injury data
+injury_data_cache = {'data': None, 'timestamp': 0}
+
 # Retry configuration
 MAX_RETRIES = 3
 RETRY_DELAY = 2  # seconds
+
+# Injury status mappings
+INJURY_STATUS_COLORS = {
+    'healthy': 'green',
+    'questionable': 'yellow', 
+    'doubtful': 'yellow',
+    'out': 'red',
+    'ir': 'red',
+    'suspended': 'red',
+    'covid': 'yellow'
+}
+
+INJURY_STATUS_BADGES = {
+    'healthy': '',
+    'questionable': 'Q',
+    'doubtful': 'D', 
+    'out': 'O',
+    'ir': 'IR',
+    'suspended': 'SUS',
+    'covid': 'COV'
+}
 
 # =============================================================================
 # OPENAI CLIENT SETUP
@@ -287,6 +314,149 @@ def get_fallback_player_data():
     return playerDatabase, playerTeams
 
 # =============================================================================
+# INJURY DATA MANAGEMENT
+# =============================================================================
+
+def fetch_injury_data():
+    """Fetch current injury data from ESPN API"""
+    try:
+        # ESPN's injury report endpoint
+        url = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news"
+        params = {
+            'categories': 'injuries',
+            'limit': 200
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        injury_status = {}
+        
+        # Parse injury reports
+        for article in data.get('articles', []):
+            headline = article.get('headline', '').lower()
+            description = article.get('description', '').lower()
+            
+            # Look for player names and injury keywords
+            for athlete in article.get('athletes', []):
+                player_name = athlete.get('displayName', '')
+                if not player_name:
+                    continue
+                
+                # Determine injury status from headline/description
+                status = 'healthy'
+                text_to_check = f"{headline} {description}".lower()
+                
+                if any(word in text_to_check for word in ['out', 'ruled out', 'will not play']):
+                    status = 'out'
+                elif any(word in text_to_check for word in ['questionable', 'game-time decision']):
+                    status = 'questionable'
+                elif any(word in text_to_check for word in ['doubtful', 'unlikely']):
+                    status = 'doubtful'
+                elif any(word in text_to_check for word in ['injured reserve', 'ir', 'season-ending']):
+                    status = 'ir'
+                elif any(word in text_to_check for word in ['suspended', 'suspension']):
+                    status = 'suspended'
+                elif any(word in text_to_check for word in ['covid', 'protocol']):
+                    status = 'covid'
+                
+                injury_status[player_name] = {
+                    'status': status,
+                    'description': article.get('headline', ''),
+                    'updated': datetime.now().isoformat()
+                }
+        
+        logger.info(f"Fetched injury data for {len(injury_status)} players")
+        return injury_status
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch injury data from ESPN: {e}")
+        
+        # Fallback: Try NFL.com injury report
+        try:
+            return fetch_nfl_injury_data()
+        except Exception as e2:
+            logger.error(f"Failed to fetch from NFL.com backup: {e2}")
+            return {}
+
+def fetch_nfl_injury_data():
+    """Backup injury data from NFL.com"""
+    try:
+        # NFL.com injury report (simpler format)
+        url = "https://www.nfl.com/injuries/"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        # Parse HTML for injury data (basic implementation)
+        # In production, you'd want a more robust parser
+        injury_status = {}
+        
+        # Look for common injury patterns in the HTML
+        content = response.text.lower()
+        
+        # This is a simplified parser - in production you'd use BeautifulSoup
+        # For now, return empty dict and rely on ESPN
+        logger.info("NFL.com injury data parsing not fully implemented")
+        return {}
+        
+    except Exception as e:
+        logger.error(f"NFL.com injury fetch failed: {e}")
+        return {}
+
+def get_current_injury_data():
+    """Get current injury data with caching"""
+    current_time = time.time()
+    
+    # Check if we have fresh injury data (1 hour cache)
+    if (injury_data_cache['data'] and 
+        current_time - injury_data_cache['timestamp'] < INJURY_DATA_TTL):
+        return injury_data_cache['data']
+    
+    # Fetch fresh injury data
+    fresh_injury_data = fetch_injury_data()
+    
+    if fresh_injury_data:
+        # Update cache
+        injury_data_cache['data'] = fresh_injury_data
+        injury_data_cache['timestamp'] = current_time
+        logger.info("Updated injury data cache")
+    else:
+        # If fetch failed but we have old data, use it
+        if injury_data_cache['data']:
+            logger.warning("Using stale injury data - fetch failed")
+        else:
+            logger.warning("No injury data available")
+            injury_data_cache['data'] = {}
+    
+    return injury_data_cache['data']
+
+def get_player_injury_status(player_name):
+    """Get injury status for a specific player"""
+    injury_data = get_current_injury_data()
+    
+    # Try exact match first
+    if player_name in injury_data:
+        return injury_data[player_name]
+    
+    # Try fuzzy matching for injury data
+    for injured_player, status_info in injury_data.items():
+        similarity = difflib.SequenceMatcher(None, player_name.lower(), injured_player.lower()).ratio()
+        if similarity > 0.9:  # Very high confidence for injury data
+            return status_info
+    
+    # Default to healthy if no injury info found
+    return {
+        'status': 'healthy',
+        'description': '',
+        'updated': datetime.now().isoformat()
+    }
+
+# =============================================================================
 # PLAYER NAME VALIDATION & AUTO-CORRECTION
 # =============================================================================
 
@@ -326,9 +496,10 @@ def find_closest_player_match(input_name, position=None):
         return None, 0
 
 def validate_and_correct_roster(roster):
-    """Validate player names and suggest corrections"""
+    """Validate player names and suggest corrections (now with injury awareness)"""
     corrections = {}
     validated_roster = {}
+    injury_warnings = {}
     
     for position, players in roster.items():
         validated_roster[position] = []
@@ -345,6 +516,12 @@ def validate_and_correct_roster(roster):
                 if player_name in pos_players:
                     validated_roster[position].append(player_name)
                     exact_match = True
+                    
+                    # Check injury status for matched player
+                    injury_info = get_player_injury_status(player_name)
+                    if injury_info['status'] in ['out', 'ir', 'doubtful']:
+                        injury_warnings[player_name] = injury_info
+                    
                     break
             
             if not exact_match:
@@ -359,11 +536,16 @@ def validate_and_correct_roster(roster):
                     }
                     validated_roster[position].append(suggested_name)
                     logger.info(f"Auto-corrected '{player_name}' → '{suggested_name}' (similarity: {similarity:.2f})")
+                    
+                    # Check injury status for corrected player
+                    injury_info = get_player_injury_status(suggested_name)
+                    if injury_info['status'] in ['out', 'ir', 'doubtful']:
+                        injury_warnings[suggested_name] = injury_info
                 else:
                     # Keep original if no good match found
                     validated_roster[position].append(player_name)
     
-    return validated_roster, corrections
+    return validated_roster, corrections, injury_warnings
 
 # =============================================================================
 # CACHING SYSTEM
@@ -561,12 +743,16 @@ def recommend():
         except ValueError as e:
             return jsonify({"error": f"Invalid roster: {str(e)}"}), 400
 
-        # NEW: Validate and auto-correct player names
-        validated_roster, corrections = validate_and_correct_roster(roster)
+        # Validate and auto-correct player names (now with injury checking)
+        validated_roster, corrections, injury_warnings = validate_and_correct_roster(roster)
         
         # If we made corrections, log them
         if corrections:
             logger.info(f"Auto-corrected player names: {corrections}")
+        
+        # Log injury warnings
+        if injury_warnings:
+            logger.info(f"Injury warnings for: {list(injury_warnings.keys())}")
 
         # Increment usage counter before API call
         increment_api_usage()
@@ -574,10 +760,21 @@ def recommend():
         # Get recommendation using validated roster
         advice = get_cached_recommendation(validated_roster, scoring_format, notes)
         
-        # Add corrections to response if any were made
+        # Add corrections and injury warnings to response
         if corrections:
             advice['player_corrections'] = corrections
-            advice['message'] = f"Auto-corrected {len(corrections)} player name(s)"
+        
+        if injury_warnings:
+            advice['injury_warnings'] = injury_warnings
+            advice['injury_message'] = f"⚠️ {len(injury_warnings)} player(s) have injury concerns"
+        
+        if corrections or injury_warnings:
+            messages = []
+            if corrections:
+                messages.append(f"Auto-corrected {len(corrections)} player name(s)")
+            if injury_warnings:
+                messages.append(f"{len(injury_warnings)} injury warning(s)")
+            advice['message'] = " • ".join(messages)
         
         # Log successful request
         logger.info(f"Successful recommendation for IP: {client_ip}")
@@ -649,17 +846,78 @@ Return only the coach's verbal response (plain text, no JSON).
         return jsonify({"error": "Failed to generate coach response"}), 500
 
 # =============================================================================
+# INJURY ENDPOINTS
+# =============================================================================
+
+@app.route("/injury-report", methods=["GET"])
+def injury_report():
+    """Get current injury report"""
+    try:
+        injury_data = get_current_injury_data()
+        
+        # Format for frontend
+        formatted_report = {}
+        for player, info in injury_data.items():
+            formatted_report[player] = {
+                'status': info['status'],
+                'description': info.get('description', ''),
+                'color': INJURY_STATUS_COLORS.get(info['status'], 'green'),
+                'badge': INJURY_STATUS_BADGES.get(info['status'], ''),
+                'updated': info.get('updated', '')
+            }
+        
+        return jsonify({
+            "injury_report": formatted_report,
+            "total_injured": len([p for p, i in injury_data.items() if i['status'] != 'healthy']),
+            "last_updated": injury_data_cache.get('timestamp', 0),
+            "cache_age_minutes": (time.time() - injury_data_cache.get('timestamp', 0)) / 60
+        })
+        
+    except Exception as e:
+        logger.error(f"Injury report error: {e}")
+        return jsonify({"error": "Failed to fetch injury report"}), 500
+
+@app.route("/refresh-injuries", methods=["POST"])
+def refresh_injuries():
+    """Manually refresh injury data"""
+    try:
+        fresh_injury_data = fetch_injury_data()
+        if fresh_injury_data:
+            # Force update cache
+            injury_data_cache['data'] = fresh_injury_data
+            injury_data_cache['timestamp'] = time.time()
+            
+            injured_count = len([p for p, i in fresh_injury_data.items() if i['status'] != 'healthy'])
+            
+            return jsonify({
+                "status": "success",
+                "message": f"Updated injury data for {len(fresh_injury_data)} players",
+                "injured_players": injured_count,
+                "timestamp": datetime.now().isoformat()
+            })
+        else:
+            return jsonify({"error": "Failed to fetch fresh injury data"}), 500
+    except Exception as e:
+        logger.error(f"Manual injury refresh failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# =============================================================================
 # MONITORING ENDPOINTS
 # =============================================================================
 
 @app.route("/health", methods=["GET"])
 def health_check():
     """Basic health check endpoint."""
+    injury_data_age = time.time() - injury_data_cache.get('timestamp', 0)
+    
     status = {
         "status": "healthy",
         "openai_configured": client is not None,
         "cache_entries": len(cache),
-        "player_data_fresh": time.time() - player_data_cache.get('timestamp', 0) < PLAYER_DATA_TTL
+        "player_data_fresh": time.time() - player_data_cache.get('timestamp', 0) < PLAYER_DATA_TTL,
+        "injury_data_fresh": injury_data_age < INJURY_DATA_TTL,
+        "injury_data_age_minutes": injury_data_age / 60,
+        "injured_players": len([p for p, i in injury_data_cache.get('data', {}).items() if i.get('status') != 'healthy'])
     }
     return jsonify(status)
 
@@ -721,13 +979,14 @@ def refresh_players():
 # =============================================================================
 
 def initialize_app():
-    """Initialize app with fresh player data"""
-    logger.info("Initializing app with fresh player data...")
+    """Initialize app with fresh player and injury data"""
+    logger.info("Initializing app with fresh player and injury data...")
     try:
         get_current_player_data()
+        get_current_injury_data()
         logger.info("App initialized successfully")
     except Exception as e:
-        logger.error(f"Failed to initialize player data: {e}")
+        logger.error(f"Failed to initialize data: {e}")
         logger.info("App will use fallback static data")
 
 if __name__ == "__main__":

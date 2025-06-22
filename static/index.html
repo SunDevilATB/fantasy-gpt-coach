@@ -624,6 +624,26 @@
       text-align: center;
     }
 
+    .injury-dot {
+  background: green;
+}
+
+.injury-dot.yellow {
+  background: #FFD700;
+}
+
+.injury-dot.red {
+  background: #FF3B30;
+}
+
+.injury-badge {
+  background: #FF3B30;
+  color: white;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
     @media (max-width: 480px) {
       body {
         padding: 0;
@@ -1702,7 +1722,29 @@
         rebuttalBox.innerHTML = '<div style="color: var(--error-red);">❌ Coach failed to respond.</div>';
       }
     }
+    // Update your autocomplete to show injury status
+item.innerHTML = `
+  <span class="player-name">
+    <span class="injury-dot ${getInjuryColor(player)}" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px;"></span>
+    ${player}
+    ${getInjuryBadge(player) ? `<span class="injury-badge">${getInjuryBadge(player)}</span>` : ''}
+  </span>
+  <div class="player-meta">
+    <span class="player-badge">${playerPos}</span>
+    ${playerTeam ? `<span class="player-badge" style="background: var(--ios-blue); color: white;">${playerTeam}</span>` : ''}
+  </div>
+`;
 
+// Add injury status functions
+function getInjuryColor(playerName) {
+  // This would be populated from your injury API
+  return 'green'; // default healthy
+}
+
+function getInjuryBadge(playerName) {
+  // Return Q, D, O, IR badges
+  return ''; // default no badge
+}
     // Initialize the roster builder on page load
     updatePositionLimits(); // Set correct limits for default format
     updateSavedTeamsDropdown(); // Load saved teams
