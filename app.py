@@ -575,10 +575,10 @@ def get_cached_recommendation(roster, scoring_format, notes=""):
             del cache[request_hash]
     
     try:
-        # Build prompt
-        current_week = "Week 1"
-        prompt = f"""
-You are a sharp, opinionated fantasy football coach analyzing lineups for {current_week} of the 2025 NFL season.
+# Enhanced prompt with better context
+current_week = "Week 1"  # You could make this dynamic
+prompt = f"""
+You are a sharp, opinionated fantasy football coach analyzing lineups for {current_week} of the 2024 NFL season.
 
 League Format: {scoring_format}
 Custom Notes: {notes or "None provided"}
@@ -590,7 +590,7 @@ Instructions:
 - Select the optimal starting lineup considering matchups, injury status, and recent performance
 - Clearly separate players into: recommended_starters, bench, and waiver_watchlist
 - For FLEX positions, prioritize high-upside players with favorable matchups
-- Include players to watch on waivers based on potential opportunity
+- Include 4-6 players to watch on waivers based on potential opportunity, injuries, or breakout potential
 - Provide a brief strategy_summary explaining your key decisions and any risky calls
 
 Respond ONLY in valid JSON format:
@@ -603,7 +603,7 @@ Respond ONLY in valid JSON format:
     "FLEX": ["..."]
   }},
   "bench": ["...", "..."],
-  "waiver_watchlist": ["...", "..."],
+  "waiver_watchlist": ["Player1", "Player2", "Player3", "Player4", "Player5"],
   "strategy_summary": "Brief explanation of key decisions and reasoning"
 }}
 """
