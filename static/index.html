@@ -645,6 +645,206 @@
       gap: 8px;
     }
 
+    /* Collapsible Sections */
+    .section-collapsible {
+      margin: 16px 0;
+    }
+
+    .section-toggle {
+      background: var(--background-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-small);
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .section-toggle:hover {
+      background: var(--border-color);
+    }
+
+    .section-toggle.collapsed {
+      border-radius: var(--radius-small);
+    }
+
+    .section-toggle.expanded {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom: none;
+    }
+
+    .section-toggle-title {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .section-toggle-icon {
+      font-size: 14px;
+      color: var(--text-secondary);
+      transition: transform 0.2s ease;
+    }
+
+    .section-toggle.expanded .section-toggle-icon {
+      transform: rotate(180deg);
+    }
+
+    .section-content {
+      border: 1px solid var(--border-color);
+      border-top: none;
+      border-radius: 0 0 var(--radius-small) var(--radius-small);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .section-content.collapsed {
+      max-height: 0;
+      opacity: 0;
+      border: none;
+    }
+
+    .section-content.expanded {
+      max-height: 2000px;
+      opacity: 1;
+    }
+
+    .section-content-inner {
+      padding: 16px;
+    }
+
+    /* Confidence Scores */
+    .confidence-score {
+      background: var(--background-secondary);
+      color: var(--text-primary);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      margin-left: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .confidence-score.high {
+      background: var(--success-green);
+      color: white;
+    }
+
+    .confidence-score.medium {
+      background: var(--warning-orange);
+      color: white;
+    }
+
+    .confidence-score.low {
+      background: var(--error-red);
+      color: white;
+    }
+
+    /* Player Click Interactions */
+    .starter-pill.clickable {
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+    .starter-pill.clickable:hover {
+      border-color: var(--primary-blue);
+      background: var(--primary-blue);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .player-challenge-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .player-challenge-modal.show {
+      display: flex;
+    }
+
+    .player-challenge-content {
+      background: var(--background-secondary);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: var(--shadow-large);
+      animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .player-challenge-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .player-challenge-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .player-challenge-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .player-challenge-close:hover {
+      color: var(--text-primary);
+    }
+
+    .challenge-suggestions {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .challenge-suggestion {
+      background: var(--background-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-small);
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    .challenge-suggestion:hover {
+      background: var(--primary-blue);
+      color: white;
+    }
+
     /* Mobile Optimizations */
     @media (max-width: 480px) {
       body {
@@ -948,16 +1148,6 @@
         <!-- Advice will appear here -->
       </div>
 
-      <div id="challenge-area" class="challenge-section" style="display: none;">
-        <div class="strategy-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border-color: #F59E0B;">
-          <h3 style="color: #92400E; margin: 0 0 12px 0; font-size: 16px; font-weight: 700;">🗣 Challenge the Coach</h3>
-          <textarea id="userChallenge" rows="2" placeholder="Why did you bench my star player?" style="margin-bottom: 12px;"></textarea>
-          <button class="btn btn-warning" style="width: 100%;" onclick="challengeCoach()">
-            Submit Challenge
-          </button>
-        </div>
-      </div>
-
       <div id="rebuttal" class="output-card" style="display: none;">
         <!-- Coach rebuttal will appear here -->
       </div>
@@ -1114,6 +1304,177 @@
       // Return 4-6 random recommendations
       const shuffled = hotWaiverTargets.sort(() => 0.5 - Math.random());
       return shuffled.slice(0, Math.floor(Math.random() * 3) + 4);
+    }
+
+    // Collapsible sections functionality
+    function toggleSection(sectionId) {
+      const toggle = document.querySelector(`[data-section="${sectionId}"]`);
+      const content = document.getElementById(`${sectionId}-content`);
+      
+      if (!toggle || !content) return;
+      
+      const isExpanded = toggle.classList.contains('expanded');
+      
+      if (isExpanded) {
+        toggle.classList.remove('expanded');
+        toggle.classList.add('collapsed');
+        content.classList.remove('expanded');
+        content.classList.add('collapsed');
+      } else {
+        toggle.classList.remove('collapsed');
+        toggle.classList.add('expanded');
+        content.classList.remove('collapsed');
+        content.classList.add('expanded');
+      }
+    }
+
+    // Confidence score generation
+    function getConfidenceScore(playerName, position) {
+      // Mock confidence scores - in production this would come from your AI model
+      const confidenceData = {
+        'Josh Allen': 95,
+        'Christian McCaffrey': 92,
+        'Tyreek Hill': 88,
+        'Travis Kelce': 85,
+        'Justin Tucker': 82,
+        'San Francisco 49ers': 78,
+        'Saquon Barkley': 87,
+        'Cooper Kupp': 75, // Lower due to injury concerns
+        'Nick Chubb': 45,  // Very low due to injury
+      };
+      
+      // Generate a base score if not in our data
+      let score = confidenceData[playerName];
+      if (!score) {
+        // Generate realistic scores based on position
+        const baseScores = {
+          'QB': 75,
+          'RB': 70,
+          'WR': 68,
+          'TE': 65,
+          'DST': 60,
+          'K': 55
+        };
+        score = baseScores[position] + Math.floor(Math.random() * 25) - 10;
+        score = Math.max(40, Math.min(95, score)); // Keep between 40-95
+      }
+      
+      return score;
+    }
+
+    function getConfidenceClass(score) {
+      if (score >= 80) return 'high';
+      if (score >= 65) return 'medium';
+      return 'low';
+    }
+
+    function getConfidenceText(score) {
+      if (score >= 80) return 'CONFIDENT';
+      if (score >= 65) return 'SOLID';
+      return 'RISKY';
+    }
+
+    // Player-specific challenge functionality
+    function openPlayerChallenge(playerName, position) {
+      const modal = document.getElementById('player-challenge-modal');
+      const playerNameEl = document.getElementById('challenge-player-name');
+      const suggestionsEl = document.getElementById('challenge-suggestions');
+      
+      playerNameEl.textContent = playerName;
+      
+      // Generate position-specific challenge suggestions
+      const suggestions = generateChallengeSuggestions(playerName, position);
+      suggestionsEl.innerHTML = suggestions.map(suggestion => `
+        <div class="challenge-suggestion" onclick="sendPlayerChallenge('${playerName}', '${suggestion}')">
+          ${suggestion}
+        </div>
+      `).join('');
+      
+      modal.classList.add('show');
+    }
+
+    function closePlayerChallenge() {
+      const modal = document.getElementById('player-challenge-modal');
+      modal.classList.remove('show');
+    }
+
+    function generateChallengeSuggestions(playerName, position) {
+      const suggestions = {
+        'QB': [
+          `Why start ${playerName} over other QB options?`,
+          `Is ${playerName}'s matchup really that good?`,
+          `What if ${playerName} has a bad game?`
+        ],
+        'RB': [
+          `Why ${playerName} over other RBs on my roster?`,
+          `Is ${playerName} getting enough touches lately?`,
+          `What about ${playerName}'s injury concerns?`
+        ],
+        'WR': [
+          `Why trust ${playerName} this week?`,
+          `Is ${playerName} the best WR option I have?`,
+          `What if ${playerName}'s target share drops?`
+        ],
+        'TE': [
+          `Why ${playerName} at TE this week?`,
+          `Is ${playerName} still the primary target?`,
+          `What about other TE streaming options?`
+        ],
+        'DST': [
+          `Why ${playerName} defense over others?`,
+          `Is this matchup really favorable?`,
+          `What about turnovers and sacks potential?`
+        ],
+        'K': [
+          `Why ${playerName} over other kickers?`,
+          `Is the weather going to affect kicks?`,
+          `What about red zone opportunities?`
+        ]
+      };
+      
+      return suggestions[position] || [`Why start ${playerName}?`, `Is this the right choice?`, `What are the alternatives?`];
+    }
+
+    async function sendPlayerChallenge(playerName, challenge) {
+      closePlayerChallenge();
+      
+      const rebuttalBox = document.getElementById("rebuttal");
+      const format = document.getElementById("format").value;
+      const custom = document.getElementById("custom-format").value;
+      const fullFormat = format === "Custom" ? `Custom: ${custom}` : format;
+
+      rebuttalBox.style.display = "block";
+      rebuttalBox.className = "output-card loading fade-in";
+      rebuttalBox.innerHTML = "Coach is preparing a response...";
+
+      try {
+        const res = await fetch("/challenge", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ 
+            advice: {
+              recommended_starters: {}, // We'll need to populate this properly
+              bench: [], 
+              waiver_watchlist: [], 
+              strategy_summary: ""
+            }, 
+            scoring_format: fullFormat, 
+            user_challenge: `${challenge} (Specifically about ${playerName})`
+          })
+        });
+        const data = await res.json();
+        
+        rebuttalBox.className = "output-card fade-in";
+        rebuttalBox.innerHTML = data.error
+          ? `<div style="color: var(--error-red);">⚠️ ${data.error}</div>`
+          : `<div class="challenge-card">
+               <h3 class="challenge-title">🗯️ Coach's Response about ${playerName}</h3>
+               <p style="margin: 0; line-height: 1.5; color: #92400E;">${data.rebuttal}</p>
+             </div>`;
+      } catch {
+        rebuttalBox.className = "output-card";
+        rebuttalBox.innerHTML = '<div style="color: var(--error-red);">❌ Coach failed to respond.</div>';
+      }
     }
 
     // NFL Player Database (2025 Season - Updated with 2024 & 2025 Rookies)
@@ -1953,7 +2314,7 @@
         // Build the new compact lineup display with enhanced features
         let html = '<div class="lineup-container">';
         
-        // Strategy Section - FIRST (The main AI feature!)
+        // Strategy Section - FIRST (Always expanded)
         html += `
           <div class="strategy-card">
             <h3 class="strategy-title">🧠 AI Strategy Recommendation</h3>
@@ -1961,111 +2322,159 @@
           </div>
         `;
 
-        // Challenge Section - SECOND
-        html += `
-          <div class="challenge-section">
-            <div class="strategy-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border-color: #F59E0B;">
-              <h3 style="color: #92400E; margin: 0 0 12px 0; font-size: 16px; font-weight: 700;">🗣 Challenge the Coach</h3>
-              <textarea id="userChallenge" rows="2" placeholder="Why did you bench my star player?" style="margin-bottom: 12px;"></textarea>
-              <button class="btn btn-warning" style="width: 100%;" onclick="challengeCoach()">
-                Submit Challenge
-              </button>
-            </div>
-          </div>
-        `;
-
-        // Defense Rankings Summary - THIRD
-        html += `
-          <div class="defense-ranking">
-            <div class="defense-ranking-header">
-              <span class="defense-ranking-title">🛡️ Defense Matchup Guide</span>
-            </div>
-            <div style="font-size: 12px; color: var(--text-tertiary);">
-              <span class="defense-rank good">1-10</span> Easy matchup &nbsp;
-              <span class="defense-rank average">11-22</span> Average &nbsp;
-              <span class="defense-rank bad">23-32</span> Tough matchup
-            </div>
-          </div>
-        `;
-        
-        // Starting Lineup - FOURTH (Organized by Position with enhanced info)
+        // Starting Lineup - SECOND (Always expanded with confidence scores)
         html += '<div class="starters-grid">';
-        Object.entries(data.recommended_starters).forEach(([pos, players]) => {
-          // Display D/ST instead of DST
-          const displayPos = pos === 'DST' ? 'D/ST' : pos;
-          html += `
-            <div class="position-group-display">
-              <div class="position-group-header">${displayPos}</div>
-              <div class="position-players">
-                ${players.map(p => {
-                  const injury = getInjuryStatus(p);
-                  const team = getPlayerTeam(p);
-                  const playerPos = getPlayerPosition(p);
-                  const defenseRank = team ? getDefenseRank(team, playerPos) : null;
-                  
-                  return `
-                    <div class="starter-pill">
-                      ${getInjuryDot(injury.status)}
-                      ${p}
-                      ${getInjuryBadge(injury.status, injury.injury)}
-                      ${defenseRank ? `<span class="defense-rank ${defenseRank.class}" title="Defense vs ${playerPos} rank">${defenseRank.rank}</span>` : ''}
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-          `;
-        });
-        html += '</div>';
-
-        // Bench Section - FOURTH (Enhanced with injury info)
-        if (data.bench && data.bench.length > 0) {
-          html += `
-            <div class="lineup-section">
-              <div class="lineup-header">
-                <h3 class="lineup-title">Bench</h3>
-                <span class="lineup-badge bench">${data.bench.length}</span>
-              </div>
-              <div class="player-grid">
-                ${data.bench.map(p => {
-                  const injury = getInjuryStatus(p);
-                  return `
-                    <div class="player-card">
-                      <div class="player-name">
+        
+        // Define the position order to match the roster builder
+        const positionOrder = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'DST', 'K'];
+        
+        positionOrder.forEach(pos => {
+          if (data.recommended_starters[pos] && data.recommended_starters[pos].length > 0) {
+            const players = data.recommended_starters[pos];
+            // Display D/ST instead of DST
+            const displayPos = pos === 'DST' ? 'D/ST' : pos;
+            html += `
+              <div class="position-group-display">
+                <div class="position-group-header">${displayPos}</div>
+                <div class="position-players">
+                  ${players.map(p => {
+                    const injury = getInjuryStatus(p);
+                    const team = getPlayerTeam(p);
+                    const playerPos = getPlayerPosition(p);
+                    const defenseRank = team ? getDefenseRank(team, playerPos) : null;
+                    const confidence = getConfidenceScore(p, pos);
+                    const confidenceClass = getConfidenceClass(confidence);
+                    const confidenceText = getConfidenceText(confidence);
+                    
+                    return `
+                      <div class="starter-pill clickable" onclick="openPlayerChallenge('${p}', '${pos}')">
                         ${getInjuryDot(injury.status)}
                         ${p}
                         ${getInjuryBadge(injury.status, injury.injury)}
+                        <span class="confidence-score ${confidenceClass}">${confidence}%</span>
+                        ${defenseRank ? `<span class="defense-rank ${defenseRank.class}" title="Defense vs ${playerPos} rank">${defenseRank.rank}</span>` : ''}
                       </div>
-                    </div>
-                  `;
-                }).join('')}
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          }
+        });
+        // Add help text for new interaction model
+        html += `
+          <div class="strategy-card" style="background: linear-gradient(135deg, #F0F9FF, #E0F2FE); border-color: #BAE6FD; margin-top: 16px;">
+            <h3 style="color: var(--primary-blue); margin: 0 0 8px 0; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+              💡 Pro Tip
+            </h3>
+            <p style="margin: 0; line-height: 1.5; color: var(--text-secondary); font-size: 14px;">
+              <strong>Click on any player above</strong> to challenge the coach's decision about them. 
+              Expand sections below for bench players and waiver wire targets.
+            </p>
+          </div>
+        `;
+
+        html += '</div>';
+
+        // Defense Matchup Guide - THIRD (Collapsible, collapsed by default)
+        html += `
+          <div class="section-collapsible">
+            <div class="section-toggle collapsed" data-section="defense-guide" onclick="toggleSection('defense-guide')">
+              <span class="section-toggle-title">🛡️ Defense Matchup Guide</span>
+              <span class="section-toggle-icon">▼</span>
+            </div>
+            <div id="defense-guide-content" class="section-content collapsed">
+              <div class="section-content-inner">
+                <div style="font-size: 14px; color: var(--text-tertiary); line-height: 1.5;">
+                  <div style="margin-bottom: 8px;">
+                    <span class="defense-rank good">1-10</span> Easy matchup - Defense allows lots of points to this position
+                  </div>
+                  <div style="margin-bottom: 8px;">
+                    <span class="defense-rank average">11-22</span> Average matchup - Neutral fantasy points allowed
+                  </div>
+                  <div>
+                    <span class="defense-rank bad">23-32</span> Tough matchup - Defense is stingy against this position
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Bench Section - FOURTH (Collapsible, collapsed by default)
+        if (data.bench && data.bench.length > 0) {
+          html += `
+            <div class="section-collapsible">
+              <div class="section-toggle collapsed" data-section="bench" onclick="toggleSection('bench')">
+                <span class="section-toggle-title">🪑 Bench Players</span>
+                <span class="section-toggle-icon">▼</span>
+              </div>
+              <div id="bench-content" class="section-content collapsed">
+                <div class="section-content-inner">
+                  <div class="player-grid">
+                    ${data.bench.map(p => {
+                      const injury = getInjuryStatus(p);
+                      return `
+                        <div class="player-card">
+                          <div class="player-name">
+                            ${getInjuryDot(injury.status)}
+                            ${p}
+                            ${getInjuryBadge(injury.status, injury.injury)}
+                          </div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
               </div>
             </div>
           `;
         }
 
-        // Waiver Watch Section - FIFTH
+        // Waiver Watch Section - FIFTH (Collapsible, collapsed by default)
         const waiverPlayers = data.waiver_watchlist && data.waiver_watchlist.length > 0 
           ? data.waiver_watchlist 
-          : getRecommendedWaiverPickups(); // Fallback recommendations
+          : getRecommendedWaiverPickups();
         
         html += `
-          <div class="lineup-section">
-            <div class="lineup-header">
-              <h3 class="lineup-title">Waiver Watch</h3>
-              <span class="lineup-badge waiver">${waiverPlayers.length}</span>
+          <div class="section-collapsible">
+            <div class="section-toggle collapsed" data-section="waiver" onclick="toggleSection('waiver')">
+              <span class="section-toggle-title">📈 Waiver Watch</span>
+              <span class="section-toggle-icon">▼</span>
             </div>
-            <div class="player-grid">
-              ${waiverPlayers.map(p => `
-                <div class="player-card">
-                  <div class="player-name">${p}</div>
+            <div id="waiver-content" class="section-content collapsed">
+              <div class="section-content-inner">
+                <div class="player-grid">
+                  ${waiverPlayers.map(p => `
+                    <div class="player-card">
+                      <div class="player-name">${p}</div>
+                    </div>
+                  `).join('')}
                 </div>
-              `).join('')}
+              </div>
             </div>
           </div>
         `;
 
         html += '</div>';
+
+        // Add the player challenge modal
+        html += `
+          <div id="player-challenge-modal" class="player-challenge-modal" onclick="closePlayerChallenge()">
+            <div class="player-challenge-content" onclick="event.stopPropagation()">
+              <div class="player-challenge-header">
+                <h3 class="player-challenge-title">Challenge About <span id="challenge-player-name"></span></h3>
+                <button class="player-challenge-close" onclick="closePlayerChallenge()">×</button>
+              </div>
+              <div id="challenge-suggestions" class="challenge-suggestions">
+                <!-- Challenge suggestions will be populated here -->
+              </div>
+              <div style="font-size: 12px; color: var(--text-tertiary); text-align: center;">
+                Click a question above to challenge the coach's decision
+              </div>
+            </div>
+          </div>
+        `;
 
         outputDiv.className = "output-card fade-in";
         outputDiv.innerHTML = html;
@@ -2082,64 +2491,13 @@
       document.getElementById("back-btn").style.display = "none";
       document.getElementById("rebuttal").style.display = "none";
       document.getElementById("output").style.display = "none";
+      closePlayerChallenge(); // Close any open challenge modal
     }
 
     async function challengeCoach() {
-      const rebuttalBox = document.getElementById("rebuttal");
-      const userPrompt = document.getElementById("userChallenge").value.trim();
-      if (!userPrompt) {
-        alert("⚠️ Enter a question for the coach.");
-        return;
-      }
-
-      const format = document.getElementById("format").value;
-      const custom = document.getElementById("custom-format").value;
-      const fullFormat = format === "Custom" ? `Custom: ${custom}` : format;
-
-      rebuttalBox.style.display = "block";
-      rebuttalBox.className = "output-card loading fade-in";
-      rebuttalBox.innerHTML = "Coach is preparing a response...";
-
-      const starters = {};
-      document.querySelectorAll(".player-list:not(.bench):not(.waiver)").forEach(ul => {
-        const pos = ul.previousElementSibling?.textContent?.trim();
-        if (pos) {
-          starters[pos] = Array.from(ul.querySelectorAll("li")).map(li => li.textContent);
-        }
-      });
-
-      const bench = Array.from(document.querySelectorAll(".player-list.bench li")).map(li => li.textContent);
-      const waiver = Array.from(document.querySelectorAll(".player-list.waiver li")).map(li => li.textContent);
-      const summary = document.querySelector(".strategy-summary")?.textContent || "";
-
-      try {
-        const res = await fetch("/challenge", {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ 
-            advice: {
-              recommended_starters: starters, 
-              bench, 
-              waiver_watchlist: waiver, 
-              strategy_summary: summary
-            }, 
-            scoring_format: fullFormat, 
-            user_challenge: userPrompt 
-          })
-        });
-        const data = await res.json();
-        
-        rebuttalBox.className = "output-card fade-in";
-        rebuttalBox.innerHTML = data.error
-          ? `<div style="color: var(--error-red);">⚠️ ${data.error}</div>`
-          : `<div class="challenge-card">
-               <h3 class="challenge-title">🗯️ Coach's Response</h3>
-               <p style="margin: 0; line-height: 1.5; color: #92400E;">${data.rebuttal}</p>
-             </div>`;
-      } catch {
-        rebuttalBox.className = "output-card";
-        rebuttalBox.innerHTML = '<div style="color: var(--error-red);">❌ Coach failed to respond.</div>';
-      }
+      // Legacy function - now replaced by player-specific challenges
+      // Keep for backwards compatibility but redirect to general advice
+      alert("💡 Try clicking on individual players in your starting lineup to challenge specific decisions!");
     }
 
     // Initialize everything on page load
@@ -2153,6 +2511,13 @@
       if (dropdown) {
         dropdown.addEventListener('change', loadSelectedTeam);
       }
+      
+      // Add keyboard support for modal
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closePlayerChallenge();
+        }
+      });
       
       // Initialize roster and data
       updatePositionLimits(); // Set correct limits for default format
