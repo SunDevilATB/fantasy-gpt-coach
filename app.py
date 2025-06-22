@@ -163,6 +163,7 @@ Instructions:
 - Select the optimal starting lineup considering matchups, injury status, and recent performance
 - Clearly separate players into: recommended_starters, bench, and waiver_watchlist
 - For FLEX positions, prioritize high-upside players with favorable matchups
+- Include team defenses (D/ST) and kickers (K) in your recommendations
 - Include 4-6 players to watch on waivers based on potential opportunity, injuries, or breakout potential
 - Provide a brief strategy_summary explaining your key decisions and any risky calls
 
@@ -173,7 +174,9 @@ Respond ONLY in valid JSON format:
     "RB": ["...", "..."],
     "WR": ["...", "..."],
     "TE": ["..."],
-    "FLEX": ["..."]
+    "FLEX": ["..."],
+    "DST": ["..."],
+    "K": ["..."]
   }},
   "bench": ["...", "..."],
   "waiver_watchlist": ["Player1", "Player2", "Player3", "Player4", "Player5"],

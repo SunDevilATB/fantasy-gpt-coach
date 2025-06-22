@@ -1102,6 +1102,20 @@
       }
     }
 
+    function getRecommendedWaiverPickups() {
+      // Fallback waiver recommendations when backend doesn't provide them
+      // In production, this could be based on recent breakouts, injuries, etc.
+      const hotWaiverTargets = [
+        'Tank Dell', 'Tyler Boyd', 'Roschon Johnson', 'Ty Chandler',
+        'Demarcus Robinson', 'Noah Brown', 'Zay Jones', 'Deon Jackson',
+        'Isaiah Likely', 'Tyler Conklin', 'Jordan Mason', 'Rico Dowdle'
+      ];
+      
+      // Return 4-6 random recommendations
+      const shuffled = hotWaiverTargets.sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, Math.floor(Math.random() * 3) + 4);
+    }
+
     // NFL Player Database (2025 Season - Updated with 2024 & 2025 Rookies)
     const playerDatabase = {
       QB: [
@@ -1183,6 +1197,26 @@
         // 2025 Rookies
         'Tyler Warren', 'Colston Loveland', 'Harold Fannin Jr.', 'Mitchell Evans', 'Oscar Delp',
         'Gunnar Helm', 'Jake Briningstool', 'Eli Stowers', 'Nick Elksnis', 'Walker Lyons'
+      ],
+      DST: [
+        // Team Defenses (2025 Season)
+        'Arizona Cardinals', 'Atlanta Falcons', 'Baltimore Ravens', 'Buffalo Bills', 'Carolina Panthers',
+        'Chicago Bears', 'Cincinnati Bengals', 'Cleveland Browns', 'Dallas Cowboys', 'Denver Broncos',
+        'Detroit Lions', 'Green Bay Packers', 'Houston Texans', 'Indianapolis Colts', 'Jacksonville Jaguars',
+        'Kansas City Chiefs', 'Las Vegas Raiders', 'Los Angeles Chargers', 'Los Angeles Rams', 'Miami Dolphins',
+        'Minnesota Vikings', 'New England Patriots', 'New Orleans Saints', 'New York Giants', 'New York Jets',
+        'Philadelphia Eagles', 'Pittsburgh Steelers', 'San Francisco 49ers', 'Seattle Seahawks', 'Tampa Bay Buccaneers',
+        'Tennessee Titans', 'Washington Commanders'
+      ],
+      K: [
+        // Kickers (2025 Season)
+        'Justin Tucker', 'Harrison Butker', 'Tyler Bass', 'Younghoe Koo', 'Brandon McManus',
+        'Daniel Carlson', 'Jake Moody', 'Cameron Dicker', 'Chris Boswell', 'Evan McPherson',
+        'Ka\'imi Fairbairn', 'Matt Gay', 'Jason Sanders', 'Greg Zuerlein', 'Wil Lutz',
+        'Mason Crosby', 'Matt Prater', 'Ryan Succop', 'Dustin Hopkins', 'Cairo Santos',
+        'Nick Folk', 'Joey Slye', 'Graham Gano', 'Blake Grupe', 'Chad Ryland',
+        'Anders Carlson', 'Jake Elliott', 'Cade York', 'Austin Seibert', 'Jason Myers',
+        'Brandon McMannus', 'Riley Patterson'
       ]
     };
 
@@ -1239,6 +1273,8 @@
       WR: [],
       TE: [],
       FLEX: [],
+      DST: [],
+      K: [],
       BENCH: []
     };
 
@@ -1248,6 +1284,8 @@
       WR: 6,
       TE: 3,
       FLEX: 2,
+      DST: 2,
+      K: 2,
       BENCH: 8
     };
 
@@ -1259,6 +1297,8 @@
         WR: 5,
         TE: 2,
         FLEX: 1,
+        DST: 2,
+        K: 2,
         BENCH: 6
       },
       'PPR': {
@@ -1267,6 +1307,8 @@
         WR: 6,
         TE: 2,
         FLEX: 2,
+        DST: 2,
+        K: 2,
         BENCH: 7
       },
       'Half-PPR': {
@@ -1275,6 +1317,8 @@
         WR: 6,
         TE: 2,
         FLEX: 2,
+        DST: 2,
+        K: 2,
         BENCH: 7
       },
       '2QB': {
@@ -1283,6 +1327,8 @@
         WR: 5,
         TE: 2,
         FLEX: 2,
+        DST: 2,
+        K: 2,
         BENCH: 8
       },
       'Superflex': {
@@ -1291,6 +1337,8 @@
         WR: 6,
         TE: 2,
         FLEX: 2,
+        DST: 2,
+        K: 2,
         BENCH: 8
       },
       'Dynasty PPR': {
@@ -1299,6 +1347,8 @@
         WR: 10,
         TE: 3,
         FLEX: 3,
+        DST: 3,
+        K: 3,
         BENCH: 15
       },
       'Custom': {
@@ -1307,6 +1357,8 @@
         WR: 6,
         TE: 3,
         FLEX: 2,
+        DST: 2,
+        K: 2,
         BENCH: 8
       }
     };
@@ -1469,6 +1521,8 @@
         WR: ['Tyreek Hill', 'Stefon Diggs', 'Mike Evans'],
         TE: ['Travis Kelce'],
         FLEX: ['Tony Pollard'],
+        DST: ['San Francisco 49ers'],
+        K: ['Justin Tucker'],
         BENCH: ['Tua Tagovailoa', 'James Conner', 'Jerry Jeudy']
       },
       '2qb': {
@@ -1477,6 +1531,8 @@
         WR: ['Cooper Kupp', 'Davante Adams'],
         TE: ['Mark Andrews'],
         FLEX: ['Amari Cooper'],
+        DST: ['Buffalo Bills'],
+        K: ['Harrison Butker'],
         BENCH: ['Geno Smith', 'Rhamondre Stevenson']
       }
     };
@@ -1489,14 +1545,24 @@
     }
 
     function getRelevantPlayers(position, query) {
-      // For FLEX and BENCH, include RB, WR, TE
+      // For FLEX, include RB, WR, TE (but not D/ST or K)
+      // For BENCH, include all skill positions
       let availablePlayers = [];
       
-      if (position === 'FLEX' || position === 'BENCH') {
+      if (position === 'FLEX') {
         availablePlayers = [
           ...playerDatabase.RB,
           ...playerDatabase.WR, 
           ...playerDatabase.TE
+        ];
+      } else if (position === 'BENCH') {
+        availablePlayers = [
+          ...playerDatabase.QB,
+          ...playerDatabase.RB,
+          ...playerDatabase.WR, 
+          ...playerDatabase.TE,
+          ...playerDatabase.DST,
+          ...playerDatabase.K
         ];
       } else if (playerDatabase[position]) {
         availablePlayers = playerDatabase[position];
@@ -1527,7 +1593,7 @@
     function getPlayerPosition(playerName) {
       for (const [position, players] of Object.entries(playerDatabase)) {
         if (players.includes(playerName)) {
-          return position;
+          return position === 'DST' ? 'D/ST' : position; // Display D/ST instead of DST
         }
       }
       return '';
@@ -1694,8 +1760,11 @@
         
         const headerDiv = document.createElement('div');
         headerDiv.className = 'position-header';
+        
+        // Display D/ST instead of DST
+        const displayPosition = position === 'DST' ? 'D/ST' : position;
         headerDiv.innerHTML = `
-          <span class="position-title">${position}</span>
+          <span class="position-title">${displayPosition}</span>
           <span class="position-count">${roster[position].length}/${currentPositionLimits[position]}</span>
         `;
         positionCard.appendChild(headerDiv);
@@ -1735,7 +1804,7 @@
         if (roster[position].length < currentPositionLimits[position]) {
           const addButton = document.createElement('button');
           addButton.className = 'btn add-player-btn';
-          addButton.textContent = `+ Add ${position}`;
+          addButton.textContent = `+ Add ${displayPosition}`;
           addButton.onclick = () => addPlayer(position);
           positionCard.appendChild(addButton);
         }
@@ -1784,12 +1853,22 @@
           let availablePlayers = [];
           
           // Get available players for this position
-          if (position === 'FLEX' || position === 'BENCH') {
-            // FLEX and BENCH can use RB, WR, TE
+          if (position === 'FLEX') {
+            // FLEX can use RB, WR, TE
             availablePlayers = [
               ...playerDatabase.RB,
               ...playerDatabase.WR,
               ...playerDatabase.TE
+            ];
+          } else if (position === 'BENCH') {
+            // BENCH can use all positions
+            availablePlayers = [
+              ...playerDatabase.QB,
+              ...playerDatabase.RB,
+              ...playerDatabase.WR,
+              ...playerDatabase.TE,
+              ...playerDatabase.DST,
+              ...playerDatabase.K
             ];
           } else if (playerDatabase[position]) {
             availablePlayers = [...playerDatabase[position]];
@@ -1898,9 +1977,11 @@
         // Starting Lineup - THIRD (Organized by Position with enhanced info)
         html += '<div class="starters-grid">';
         Object.entries(data.recommended_starters).forEach(([pos, players]) => {
+          // Display D/ST instead of DST
+          const displayPos = pos === 'DST' ? 'D/ST' : pos;
           html += `
             <div class="position-group-display">
-              <div class="position-group-header">${pos}</div>
+              <div class="position-group-header">${displayPos}</div>
               <div class="position-players">
                 ${players.map(p => {
                   const injury = getInjuryStatus(p);
@@ -1964,23 +2045,25 @@
         }
 
         // Waiver Watch Section - FIFTH
-        if (data.waiver_watchlist && data.waiver_watchlist.length > 0) {
-          html += `
-            <div class="lineup-section">
-              <div class="lineup-header">
-                <h3 class="lineup-title">Waiver Watch</h3>
-                <span class="lineup-badge waiver">${data.waiver_watchlist.length}</span>
-              </div>
-              <div class="player-grid">
-                ${data.waiver_watchlist.map(p => `
-                  <div class="player-card">
-                    <div class="player-name">${p}</div>
-                  </div>
-                `).join('')}
-              </div>
+        const waiverPlayers = data.waiver_watchlist && data.waiver_watchlist.length > 0 
+          ? data.waiver_watchlist 
+          : getRecommendedWaiverPickups(); // Fallback recommendations
+        
+        html += `
+          <div class="lineup-section">
+            <div class="lineup-header">
+              <h3 class="lineup-title">Waiver Watch</h3>
+              <span class="lineup-badge waiver">${waiverPlayers.length}</span>
             </div>
-          `;
-        }
+            <div class="player-grid">
+              ${waiverPlayers.map(p => `
+                <div class="player-card">
+                  <div class="player-name">${p}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
 
         html += '</div>';
 
