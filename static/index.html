@@ -26,6 +26,25 @@
       --radius-small: 8px;
     }
 
+    /* Dark mode variables */
+    [data-theme="dark"] {
+      --primary-blue: #0A84FF;
+      --primary-blue-dark: #0969DA;
+      --secondary-gray: #98989D;
+      --background-primary: #000000;
+      --background-secondary: #1C1C1E;
+      --background-tertiary: #2C2C2E;
+      --text-primary: #FFFFFF;
+      --text-secondary: #EBEBF5;
+      --text-tertiary: #8E8E93;
+      --border-color: #38383A;
+      --success-green: #30D158;
+      --warning-orange: #FF9F0A;
+      --error-red: #FF453A;
+      --shadow: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-large: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -38,6 +57,7 @@
       padding: 16px;
       line-height: 1.4;
       -webkit-font-smoothing: antialiased;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     .container {
@@ -54,6 +74,7 @@
       color: white;
       padding: 20px 24px;
       text-align: center;
+      position: relative;
     }
 
     .header h1 {
@@ -68,6 +89,27 @@
       margin: 8px 0 0 0;
       opacity: 0.9;
       font-weight: 500;
+    }
+
+    /* Dark mode toggle */
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 8px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      width: 40px;
+      height: 40px;
+      transition: background-color 0.2s ease;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(255, 255, 255, 0.3);
     }
 
     .content {
@@ -378,6 +420,7 @@
       transition: background 0.2s ease;
       min-height: 60px;
       justify-content: center;
+      position: relative;
     }
 
     .player-card:hover {
@@ -389,6 +432,9 @@
       font-size: 14px;
       color: var(--text-primary);
       line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .player-position {
@@ -396,6 +442,107 @@
       color: var(--text-tertiary);
       margin-top: 2px;
       font-weight: 500;
+    }
+
+    /* Injury Status */
+    .injury-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    .injury-dot.healthy {
+      background: var(--success-green);
+    }
+
+    .injury-dot.questionable {
+      background: var(--warning-orange);
+    }
+
+    .injury-dot.doubtful {
+      background: var(--error-red);
+    }
+
+    .injury-dot.out {
+      background: #8E8E93;
+    }
+
+    .injury-badge {
+      background: var(--error-red);
+      color: white;
+      font-size: 10px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      margin-left: 4px;
+      font-weight: 600;
+    }
+
+    /* Weather Alert */
+    .weather-alert {
+      background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+      border: 1px solid var(--warning-orange);
+      border-radius: var(--radius-small);
+      padding: 12px;
+      margin: 16px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .weather-alert .weather-icon {
+      font-size: 18px;
+    }
+
+    .weather-alert .weather-text {
+      font-size: 14px;
+      color: #92400E;
+      font-weight: 600;
+    }
+
+    /* Defense Rankings */
+    .defense-ranking {
+      background: var(--background-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-small);
+      padding: 12px;
+      margin: 8px 0;
+    }
+
+    .defense-ranking-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .defense-ranking-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .defense-rank {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .defense-rank.good {
+      background: var(--success-green);
+      color: white;
+    }
+
+    .defense-rank.average {
+      background: var(--warning-orange);
+      color: white;
+    }
+
+    .defense-rank.bad {
+      background: var(--error-red);
+      color: white;
     }
 
     /* Starters Grid - Organized by Position */
@@ -441,6 +588,10 @@
       min-width: 120px;
       text-align: center;
       transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
     .starter-pill:hover {
@@ -496,6 +647,15 @@
 
     /* Mobile Optimizations */
     @media (max-width: 480px) {
+      body {
+        padding: 0;
+      }
+      
+      .container {
+        border-radius: 0;
+        min-height: 100vh;
+      }
+      
       .player-grid {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -522,6 +682,37 @@
 
       .starters-grid {
         gap: 8px;
+      }
+      
+      .btn-group {
+        flex-direction: column;
+      }
+      
+      .btn-group select {
+        order: -1; /* Put dropdown first on mobile */
+      }
+      
+      .player-row {
+        gap: 6px;
+      }
+      
+      .player-row input {
+        font-size: 16px; /* Prevent zoom on iOS */
+      }
+      
+      .remove-player {
+        padding: 8px 10px;
+        font-size: 14px;
+        min-width: 40px;
+      }
+
+      .autocomplete-dropdown {
+        max-height: 160px;
+        font-size: 16px; /* Prevent zoom on iOS */
+      }
+
+      .autocomplete-item {
+        padding: 14px 16px;
       }
     }
 
@@ -558,6 +749,11 @@
       border-radius: 22px;
     }
 
+    [data-theme="dark"] .back-btn {
+      background: rgba(28, 28, 30, 0.9);
+      color: var(--text-primary);
+    }
+
     /* Autocomplete Styles */
     .autocomplete-container {
       position: relative;
@@ -587,7 +783,7 @@
     .autocomplete-item {
       padding: 12px 16px;
       cursor: pointer;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-color);
       transition: background-color 0.2s ease;
       display: flex;
       justify-content: space-between;
@@ -603,87 +799,11 @@
       border-bottom: none;
     }
 
-    .player-name {
-      font-weight: 500;
-      color: var(--text-primary);
-    }
-
-    .player-position {
-      font-size: 12px;
-      color: var(--text-tertiary);
-      background: var(--background-tertiary);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-
     .autocomplete-no-results {
       padding: 12px 16px;
       color: var(--text-tertiary);
       font-style: italic;
       text-align: center;
-    }
-
-    .injury-dot {
-  background: green;
-}
-
-.injury-dot.yellow {
-  background: #FFD700;
-}
-
-.injury-dot.red {
-  background: #FF3B30;
-}
-
-.injury-badge {
-  background: #FF3B30;
-  color: white;
-  font-size: 10px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  margin-left: 4px;
-}
-    @media (max-width: 480px) {
-      body {
-        padding: 0;
-      }
-      
-      .container {
-        border-radius: 0;
-        min-height: 100vh;
-      }
-      
-      .btn-group {
-        flex-direction: column;
-      }
-      
-      .btn-group select {
-        order: -1; /* Put dropdown first on mobile */
-      }
-      
-      .player-row {
-        gap: 6px;
-      }
-      
-      .player-row input {
-        font-size: 16px; /* Prevent zoom on iOS */
-      }
-      
-      .remove-player {
-        padding: 8px 10px;
-        font-size: 14px;
-        min-width: 40px;
-      }
-
-      .autocomplete-dropdown {
-        max-height: 160px;
-        font-size: 16px; /* Prevent zoom on iOS */
-      }
-
-      .autocomplete-item {
-        padding: 14px 16px;
-      }
     }
 
     .fade-in {
@@ -694,11 +814,55 @@
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* Weather conditions */
+    .weather-conditions {
+      background: var(--background-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-small);
+      padding: 12px;
+      margin: 16px 0;
+    }
+
+    .weather-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .weather-games {
+      display: grid;
+      gap: 8px;
+    }
+
+    .weather-game {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      background: var(--background-secondary);
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .weather-game.bad {
+      border-left: 4px solid var(--error-red);
+    }
+
+    .weather-game.moderate {
+      border-left: 4px solid var(--warning-orange);
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">
+        🌙
+      </button>
       <h1>🏈 Fantasy GPT Coach</h1>
       <p>AI-powered lineup optimization</p>
     </div>
@@ -742,6 +906,18 @@
           <div class="form-group">
             <label>Additional Notes</label>
             <textarea id="notes" rows="2" placeholder="Weather concerns, injury updates, tough matchups..."></textarea>
+          </div>
+        </div>
+
+        <!-- Weather Conditions Section -->
+        <div id="weather-section" class="section" style="display: none;">
+          <div class="weather-conditions">
+            <div class="weather-title">
+              🌦️ Weather Alerts
+            </div>
+            <div id="weather-games" class="weather-games">
+              <!-- Weather alerts will be populated here -->
+            </div>
           </div>
         </div>
 
@@ -793,6 +969,139 @@
   </div>
 
   <script>
+    // Dark mode functionality
+    function toggleTheme() {
+      const body = document.body;
+      const button = document.querySelector('.theme-toggle');
+      
+      if (body.getAttribute('data-theme') === 'dark') {
+        body.removeAttribute('data-theme');
+        button.textContent = '🌙';
+        localStorage.setItem('theme', 'light');
+      } else {
+        body.setAttribute('data-theme', 'dark');
+        button.textContent = '☀️';
+        localStorage.setItem('theme', 'dark');
+      }
+    }
+
+    // Load saved theme on page load
+    function loadSavedTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const button = document.querySelector('.theme-toggle');
+      
+      if (savedTheme === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+        button.textContent = '☀️';
+      } else {
+        button.textContent = '🌙';
+      }
+    }
+
+    // Mock injury data (in production, this would come from an API)
+    const injuryData = {
+      'Christian McCaffrey': { status: 'questionable', injury: 'Achilles' },
+      'Tyreek Hill': { status: 'healthy' },
+      'Nick Chubb': { status: 'out', injury: 'Knee' },
+      'Cooper Kupp': { status: 'doubtful', injury: 'Ankle' },
+      'Travis Kelce': { status: 'healthy' },
+      'Ja\'Marr Chase': { status: 'questionable', injury: 'Hip' },
+      'Saquon Barkley': { status: 'healthy' },
+      'Josh Allen': { status: 'healthy' }
+    };
+
+    // Mock weather data (in production, this would come from a weather API)
+    const weatherData = [
+      { game: 'BUF @ DEN', conditions: 'Snow, 20mph winds', severity: 'bad' },
+      { game: 'GB @ CHI', conditions: 'Rain, 15mph winds', severity: 'moderate' },
+      { game: 'MIA @ NE', conditions: 'Cold, 25°F', severity: 'moderate' }
+    ];
+
+    // Mock defense vs position rankings (in production, this would come from an API)
+    const defenseRankings = {
+      'ARI': { vs_QB: 32, vs_RB: 15, vs_WR: 28, vs_TE: 20 },
+      'ATL': { vs_QB: 25, vs_RB: 8, vs_WR: 22, vs_TE: 12 },
+      'BAL': { vs_QB: 8, vs_RB: 5, vs_WR: 10, vs_TE: 3 },
+      'BUF': { vs_QB: 12, vs_RB: 18, vs_WR: 6, vs_TE: 15 },
+      'CAR': { vs_QB: 28, vs_RB: 22, vs_WR: 30, vs_TE: 25 },
+      'CHI': { vs_QB: 10, vs_RB: 12, vs_WR: 8, vs_TE: 7 },
+      'CIN': { vs_QB: 20, vs_RB: 28, vs_WR: 25, vs_TE: 30 },
+      'CLE': { vs_QB: 15, vs_RB: 10, vs_WR: 12, vs_TE: 8 },
+      'DAL': { vs_QB: 18, vs_RB: 25, vs_WR: 20, vs_TE: 22 },
+      'DEN': { vs_QB: 5, vs_RB: 8, vs_WR: 4, vs_TE: 2 },
+      'DET': { vs_QB: 30, vs_RB: 32, vs_WR: 32, vs_TE: 32 },
+      'GB': { vs_QB: 22, vs_RB: 20, vs_WR: 18, vs_TE: 18 },
+      'HOU': { vs_QB: 14, vs_RB: 15, vs_WR: 14, vs_TE: 10 },
+      'IND': { vs_QB: 24, vs_RB: 30, vs_WR: 28, vs_TE: 28 },
+      'JAX': { vs_QB: 26, vs_RB: 24, vs_WR: 26, vs_TE: 24 },
+      'KC': { vs_QB: 6, vs_RB: 6, vs_WR: 5, vs_TE: 4 },
+      'LV': { vs_QB: 29, vs_RB: 26, vs_WR: 24, vs_TE: 26 },
+      'LAC': { vs_QB: 11, vs_RB: 14, vs_WR: 11, vs_TE: 9 },
+      'LAR': { vs_QB: 16, vs_RB: 16, vs_WR: 15, vs_TE: 14 },
+      'MIA': { vs_QB: 9, vs_RB: 7, vs_WR: 9, vs_TE: 6 },
+      'MIN': { vs_QB: 13, vs_RB: 11, vs_WR: 13, vs_TE: 11 },
+      'NE': { vs_QB: 17, vs_RB: 19, vs_WR: 16, vs_TE: 16 },
+      'NO': { vs_QB: 19, vs_RB: 17, vs_WR: 19, vs_TE: 17 },
+      'NYG': { vs_QB: 27, vs_RB: 29, vs_WR: 27, vs_TE: 29 },
+      'NYJ': { vs_QB: 7, vs_RB: 4, vs_WR: 7, vs_TE: 5 },
+      'PHI': { vs_QB: 21, vs_RB: 21, vs_WR: 21, vs_TE: 21 },
+      'PIT': { vs_QB: 3, vs_RB: 2, vs_WR: 2, vs_TE: 1 },
+      'SF': { vs_QB: 4, vs_RB: 3, vs_WR: 3, vs_TE: 3 },
+      'SEA': { vs_QB: 23, vs_RB: 23, vs_WR: 23, vs_TE: 23 },
+      'TB': { vs_QB: 31, vs_RB: 31, vs_WR: 31, vs_TE: 31 },
+      'TEN': { vs_QB: 32, vs_RB: 27, vs_WR: 29, vs_TE: 27 },
+      'WSH': { vs_QB: 1, vs_RB: 1, vs_WR: 1, vs_TE: 1 }
+    };
+
+    function getInjuryStatus(playerName) {
+      return injuryData[playerName] || { status: 'healthy' };
+    }
+
+    function getInjuryDot(status) {
+      const dotClass = status === 'healthy' ? 'healthy' : 
+                     status === 'questionable' ? 'questionable' :
+                     status === 'doubtful' ? 'doubtful' : 'out';
+      return `<span class="injury-dot ${dotClass}"></span>`;
+    }
+
+    function getInjuryBadge(status, injury) {
+      if (status === 'healthy') return '';
+      
+      const badge = status === 'questionable' ? 'Q' :
+                   status === 'doubtful' ? 'D' :
+                   status === 'out' ? 'O' : '';
+      
+      return badge ? `<span class="injury-badge">${badge}</span>` : '';
+    }
+
+    function getDefenseRank(team, position) {
+      const positionKey = `vs_${position}`;
+      const rank = defenseRankings[team]?.[positionKey] || 16;
+      
+      let rankClass = 'average';
+      if (rank <= 10) rankClass = 'good';      // Top 10 = good matchup
+      if (rank >= 23) rankClass = 'bad';       // Bottom 10 = bad matchup
+      
+      return { rank, class: rankClass };
+    }
+
+    function displayWeatherAlerts() {
+      const weatherSection = document.getElementById('weather-section');
+      const weatherGames = document.getElementById('weather-games');
+      
+      if (weatherData.length > 0) {
+        weatherSection.style.display = 'block';
+        weatherGames.innerHTML = weatherData.map(game => `
+          <div class="weather-game ${game.severity}">
+            <span><strong>${game.game}</strong></span>
+            <span>${game.conditions}</span>
+          </div>
+        `).join('');
+      } else {
+        weatherSection.style.display = 'none';
+      }
+    }
+
     // NFL Player Database (2025 Season - Updated with 2024 & 2025 Rookies)
     const playerDatabase = {
       QB: [
@@ -1112,9 +1421,6 @@
         updatePositionLimits();
         renderRosterBuilder();
         
-        // Show success message with timestamp
-        const savedDate = new Date(teamData.savedAt).toLocaleDateString();
-        
         // Brief visual feedback
         const dropdown = document.getElementById('savedTeams');
         const originalBg = dropdown.style.backgroundColor;
@@ -1152,14 +1458,6 @@
       
       alert(`🗑️ Team "${teamName}" deleted.`);
     }
-
-    // Add event listener for team selection
-    document.addEventListener('DOMContentLoaded', function() {
-      const dropdown = document.getElementById('savedTeams');
-      if (dropdown) {
-        dropdown.addEventListener('change', loadSelectedTeam);
-      }
-    });
 
     // Current position limits (will be updated based on format)
     let currentPositionLimits = { ...positionLimits };
@@ -1263,8 +1561,14 @@
             
             const playerPos = getPlayerPosition(player);
             const playerTeam = getPlayerTeam(player);
+            const injury = getInjuryStatus(player);
+            
             item.innerHTML = `
-              <span class="player-name">${player}</span>
+              <span class="player-name">
+                ${getInjuryDot(injury.status)}
+                ${player}
+                ${getInjuryBadge(injury.status, injury.injury)}
+              </span>
               <div style="display: flex; gap: 6px; align-items: center;">
                 <span class="player-position">${playerPos}</span>
                 ${playerTeam ? `<span class="player-position" style="background: var(--primary-blue); color: white;">${playerTeam}</span>` : ''}
@@ -1379,8 +1683,6 @@
         renderRosterBuilder();
       }
     }
-
-    document.getElementById("format").addEventListener("change", updatePositionLimits);
 
     function renderRosterBuilder() {
       const container = document.getElementById('roster-builder');
@@ -1569,7 +1871,7 @@
           return;
         }
 
-        // Build the new compact lineup display
+        // Build the new compact lineup display with enhanced features
         let html = '<div class="lineup-container">';
         
         // Strategy Section - FIRST (The main AI feature!)
@@ -1593,21 +1895,49 @@
           </div>
         `;
         
-        // Starting Lineup - THIRD (Organized by Position)
+        // Starting Lineup - THIRD (Organized by Position with enhanced info)
         html += '<div class="starters-grid">';
         Object.entries(data.recommended_starters).forEach(([pos, players]) => {
           html += `
             <div class="position-group-display">
               <div class="position-group-header">${pos}</div>
               <div class="position-players">
-                ${players.map(p => `<div class="starter-pill">${p}</div>`).join('')}
+                ${players.map(p => {
+                  const injury = getInjuryStatus(p);
+                  const team = getPlayerTeam(p);
+                  const playerPos = getPlayerPosition(p);
+                  const defenseRank = team ? getDefenseRank(team, playerPos) : null;
+                  
+                  return `
+                    <div class="starter-pill">
+                      ${getInjuryDot(injury.status)}
+                      ${p}
+                      ${getInjuryBadge(injury.status, injury.injury)}
+                      ${defenseRank ? `<span class="defense-rank ${defenseRank.class}" title="Defense vs ${playerPos} rank">${defenseRank.rank}</span>` : ''}
+                    </div>
+                  `;
+                }).join('')}
               </div>
             </div>
           `;
         });
         html += '</div>';
 
-        // Bench Section - FOURTH
+        // Defense Rankings Summary
+        html += `
+          <div class="defense-ranking">
+            <div class="defense-ranking-header">
+              <span class="defense-ranking-title">🛡️ Defense Matchup Guide</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-tertiary);">
+              <span class="defense-rank good">1-10</span> Easy matchup &nbsp;
+              <span class="defense-rank average">11-22</span> Average &nbsp;
+              <span class="defense-rank bad">23-32</span> Tough matchup
+            </div>
+          </div>
+        `;
+
+        // Bench Section - FOURTH (Enhanced with injury info)
         if (data.bench && data.bench.length > 0) {
           html += `
             <div class="lineup-section">
@@ -1616,11 +1946,18 @@
                 <span class="lineup-badge bench">${data.bench.length}</span>
               </div>
               <div class="player-grid">
-                ${data.bench.map(p => `
-                  <div class="player-card">
-                    <div class="player-name">${p}</div>
-                  </div>
-                `).join('')}
+                ${data.bench.map(p => {
+                  const injury = getInjuryStatus(p);
+                  return `
+                    <div class="player-card">
+                      <div class="player-name">
+                        ${getInjuryDot(injury.status)}
+                        ${p}
+                        ${getInjuryBadge(injury.status, injury.injury)}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
               </div>
             </div>
           `;
@@ -1650,7 +1987,6 @@
         outputDiv.className = "output-card fade-in";
         outputDiv.innerHTML = html;
         
-        // Note: Challenge area is now built into the HTML above, so we don't need to show it separately
       } catch (error) {
         outputDiv.className = "output-card";
         outputDiv.innerHTML = '<div style="color: var(--error-red);">❌ Failed to get advice. Please try again.</div>';
@@ -1722,33 +2058,25 @@
         rebuttalBox.innerHTML = '<div style="color: var(--error-red);">❌ Coach failed to respond.</div>';
       }
     }
-    // Update your autocomplete to show injury status
-item.innerHTML = `
-  <span class="player-name">
-    <span class="injury-dot ${getInjuryColor(player)}" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px;"></span>
-    ${player}
-    ${getInjuryBadge(player) ? `<span class="injury-badge">${getInjuryBadge(player)}</span>` : ''}
-  </span>
-  <div class="player-meta">
-    <span class="player-badge">${playerPos}</span>
-    ${playerTeam ? `<span class="player-badge" style="background: var(--ios-blue); color: white;">${playerTeam}</span>` : ''}
-  </div>
-`;
 
-// Add injury status functions
-function getInjuryColor(playerName) {
-  // This would be populated from your injury API
-  return 'green'; // default healthy
-}
-
-function getInjuryBadge(playerName) {
-  // Return Q, D, O, IR badges
-  return ''; // default no badge
-}
-    // Initialize the roster builder on page load
-    updatePositionLimits(); // Set correct limits for default format
-    updateSavedTeamsDropdown(); // Load saved teams
-    renderRosterBuilder();
+    // Initialize everything on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load saved theme
+      loadSavedTheme();
+      
+      // Setup event listeners
+      document.getElementById("format").addEventListener("change", updatePositionLimits);
+      const dropdown = document.getElementById('savedTeams');
+      if (dropdown) {
+        dropdown.addEventListener('change', loadSelectedTeam);
+      }
+      
+      // Initialize roster and data
+      updatePositionLimits(); // Set correct limits for default format
+      updateSavedTeamsDropdown(); // Load saved teams
+      renderRosterBuilder();
+      displayWeatherAlerts(); // Show weather conditions
+    });
   </script>
 </div>
 </body>
