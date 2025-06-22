@@ -5,6 +5,7 @@ import time
 import hashlib
 import threading
 import requests
+import difflib
 from datetime import datetime, timedelta
 from functools import wraps
 from collections import defaultdict
@@ -225,7 +226,7 @@ def get_current_player_data():
 def get_fallback_player_data():
     """Fallback to your original static player database"""
     # Your original player database as fallback
-    player_database = {
+    playerDatabase = {
         'QB': [
             'Josh Allen', 'Lamar Jackson', 'Patrick Mahomes', 'Joe Burrow', 'Jalen Hurts',
             'Justin Herbert', 'Dak Prescott', 'Tua Tagovailoa', 'Kyler Murray', 'Russell Wilson',
@@ -233,6 +234,7 @@ def get_fallback_player_data():
             'Brock Purdy', 'Jared Goff', 'Daniel Jones', 'Derek Carr', 'Justin Fields',
             'C.J. Stroud', 'Kenny Pickett', 'Deshaun Watson', 'Ryan Tannehill', 'Mac Jones',
             'Bryce Young', 'Will Levis', 'Sam Howell', 'Baker Mayfield', 'Jordan Love',
+            'Aidan O\'Connell', 'Tommy DeVito', 'Mason Rudolph', 'Gardner Minshew', 'Jacoby Brissett',
             'Jayden Daniels', 'Caleb Williams', 'Drake Maye', 'Bo Nix', 'J.J. McCarthy', 'Michael Penix Jr.',
             'Cam Ward', 'Dillon Gabriel', 'Shedeur Sanders', 'Jalen Milroe', 'Quinn Ewers'
         ],
@@ -241,33 +243,127 @@ def get_fallback_player_data():
             'Saquon Barkley', 'Tony Pollard', 'Aaron Jones', 'Joe Mixon', 'Kenneth Walker III',
             'Najee Harris', 'Alvin Kamara', 'James Conner', 'Travis Etienne', 'D\'Andre Swift',
             'Javonte Williams', 'Rachaad White', 'Jerome Ford', 'Isiah Pacheco', 'Breece Hall',
-            'Jonathan Taylor', 'James Cook', 'Brian Robinson Jr.', 'Ashton Jeanty', 'Omarion Hampton'
+            'Jonathan Taylor', 'James Cook', 'Brian Robinson Jr.', 'Gus Edwards', 'Chuba Hubbard',
+            'Roschon Johnson', 'Tank Bigsby', 'Jaylen Warren', 'Justice Hill', 'Rico Dowdle',
+            'Kenneth Gainwell', 'Devin Singletary', 'Jordan Mason', 'Ty Chandler', 'AJ Dillon',
+            'Zamir White', 'Tyler Allgeier', 'Khalil Herbert', 'Zack Moss', 'Cam Akers',
+            'Ashton Jeanty', 'Omarion Hampton', 'Blake Corum', 'Trey Benson', 'Braelon Allen'
         ],
         'WR': [
             'Tyreek Hill', 'Stefon Diggs', 'Davante Adams', 'Cooper Kupp', 'DeAndre Hopkins',
             'A.J. Brown', 'Mike Evans', 'Keenan Allen', 'Amari Cooper', 'Tyler Lockett',
             'DK Metcalf', 'CeeDee Lamb', 'Ja\'Marr Chase', 'Justin Jefferson', 'Amon-Ra St. Brown',
             'Puka Nacua', 'Chris Olave', 'Garrett Wilson', 'Jaylen Waddle', 'Terry McLaurin',
+            'Calvin Ridley', 'DJ Moore', 'Michael Pittman Jr.', 'Courtland Sutton', 'Tee Higgins',
+            'Jerry Jeudy', 'Drake London', 'Chris Godwin', 'Deebo Samuel', 'DeVonta Smith',
+            'Zay Flowers', 'George Pickens', 'Tank Dell', 'Nico Collins', 'Christian Watson',
+            'Romeo Doubs', 'Jordan Addison', 'Rashee Rice', 'Josh Palmer', 'Marquise Goodwin',
             'Malik Nabers', 'Rome Odunze', 'Marvin Harrison Jr.', 'Brian Thomas Jr.', 'Xavier Worthy',
-            'Travis Hunter', 'Emeka Egbuka'
+            'Ladd McConkey', 'Keon Coleman', 'Xavier Legette', 'Ricky Pearsall', 'Ja\'Lynn Polk',
+            'Travis Hunter', 'Emeka Egbuka', 'Matthew Golden'
         ],
         'TE': [
             'Travis Kelce', 'Mark Andrews', 'T.J. Hockenson', 'George Kittle', 'Kyle Pitts',
             'Dallas Goedert', 'Evan Engram', 'Sam LaPorta', 'David Njoku', 'Pat Freiermuth',
-            'Jake Ferguson', 'Dawson Knox', 'Cole Kmet', 'Trey McBride', 'Brock Bowers',
-            'Tyler Warren', 'Colston Loveland'
+            'Jake Ferguson', 'Dawson Knox', 'Cole Kmet', 'Trey McBride', 'Tyler Higbee',
+            'Gerald Everett', 'Noah Fant', 'Hunter Henry', 'Mike Gesicki', 'Isaiah Likely',
+            'Luke Musgrave', 'Tucker Kraft', 'Will Dissly', 'Tyler Conklin', 'Cade Otton',
+            'Brock Bowers', 'Dalton Kincaid', 'Michael Mayer', 'Tyler Warren', 'Colston Loveland'
         ]
     }
     
     playerTeams = {
         'Josh Allen': 'BUF', 'Lamar Jackson': 'BAL', 'Patrick Mahomes': 'KC', 'Joe Burrow': 'CIN',
+        'Jalen Hurts': 'PHI', 'Justin Herbert': 'LAC', 'Dak Prescott': 'DAL', 'Tua Tagovailoa': 'MIA',
         'Jayden Daniels': 'WSH', 'Caleb Williams': 'CHI', 'Drake Maye': 'NE', 'Bo Nix': 'DEN',
         'Christian McCaffrey': 'SF', 'Saquon Barkley': 'PHI', 'Josh Jacobs': 'GB', 'Derrick Henry': 'BAL',
+        'Austin Ekeler': 'WSH', 'Tony Pollard': 'TEN', 'Aaron Jones': 'MIN', 'Joe Mixon': 'HOU',
         'Tyreek Hill': 'MIA', 'Stefon Diggs': 'HOU', 'CeeDee Lamb': 'DAL', 'Ja\'Marr Chase': 'CIN',
-        'Travis Kelce': 'KC', 'Mark Andrews': 'BAL', 'George Kittle': 'SF', 'Sam LaPorta': 'DET'
+        'Justin Jefferson': 'MIN', 'A.J. Brown': 'PHI', 'Mike Evans': 'TB', 'Davante Adams': 'LV',
+        'Travis Kelce': 'KC', 'Mark Andrews': 'BAL', 'George Kittle': 'SF', 'Sam LaPorta': 'DET',
+        'T.J. Hockenson': 'MIN', 'Kyle Pitts': 'ATL', 'Dallas Goedert': 'PHI', 'Brock Bowers': 'LV'
     }
     
-    return player_database, playerTeams
+    return playerDatabase, playerTeams
+
+# =============================================================================
+# PLAYER NAME VALIDATION & AUTO-CORRECTION
+# =============================================================================
+
+def find_closest_player_match(input_name, position=None):
+    """Find the closest matching player name with fuzzy matching"""
+    try:
+        player_db, _ = get_current_player_data()
+        
+        # Get all players or just from specific position
+        if position and position in player_db:
+            candidates = player_db[position]
+        else:
+            candidates = []
+            for pos_players in player_db.values():
+                candidates.extend(pos_players)
+        
+        if not candidates:
+            return None, 0
+        
+        # Find best match using difflib
+        matches = difflib.get_close_matches(
+            input_name, 
+            candidates, 
+            n=1, 
+            cutoff=0.6  # 60% similarity threshold
+        )
+        
+        if matches:
+            best_match = matches[0]
+            similarity = difflib.SequenceMatcher(None, input_name.lower(), best_match.lower()).ratio()
+            return best_match, similarity
+        
+        return None, 0
+        
+    except Exception as e:
+        logger.error(f"Player matching error: {e}")
+        return None, 0
+
+def validate_and_correct_roster(roster):
+    """Validate player names and suggest corrections"""
+    corrections = {}
+    validated_roster = {}
+    
+    for position, players in roster.items():
+        validated_roster[position] = []
+        
+        for player_name in players:
+            if not player_name or not player_name.strip():
+                continue
+                
+            # Try exact match first
+            player_db, _ = get_current_player_data()
+            exact_match = False
+            
+            for pos_players in player_db.values():
+                if player_name in pos_players:
+                    validated_roster[position].append(player_name)
+                    exact_match = True
+                    break
+            
+            if not exact_match:
+                # Try fuzzy matching
+                suggested_name, similarity = find_closest_player_match(player_name, position)
+                
+                if suggested_name and similarity > 0.7:  # 70% confidence
+                    corrections[player_name] = {
+                        'suggested': suggested_name,
+                        'similarity': similarity,
+                        'position': position
+                    }
+                    validated_roster[position].append(suggested_name)
+                    logger.info(f"Auto-corrected '{player_name}' → '{suggested_name}' (similarity: {similarity:.2f})")
+                else:
+                    # Keep original if no good match found
+                    validated_roster[position].append(player_name)
+    
+    return validated_roster, corrections
 
 # =============================================================================
 # CACHING SYSTEM
@@ -459,17 +555,29 @@ def recommend():
         notes = data.get("notes", "")
         roster = data.get("roster", {})
 
-        # Validate roster
+        # Validate roster structure
         try:
             validate_roster(roster)
         except ValueError as e:
             return jsonify({"error": f"Invalid roster: {str(e)}"}), 400
 
+        # NEW: Validate and auto-correct player names
+        validated_roster, corrections = validate_and_correct_roster(roster)
+        
+        # If we made corrections, log them
+        if corrections:
+            logger.info(f"Auto-corrected player names: {corrections}")
+
         # Increment usage counter before API call
         increment_api_usage()
         
-        # Get recommendation
-        advice = get_cached_recommendation(roster, scoring_format, notes)
+        # Get recommendation using validated roster
+        advice = get_cached_recommendation(validated_roster, scoring_format, notes)
+        
+        # Add corrections to response if any were made
+        if corrections:
+            advice['player_corrections'] = corrections
+            advice['message'] = f"Auto-corrected {len(corrections)} player name(s)"
         
         # Log successful request
         logger.info(f"Successful recommendation for IP: {client_ip}")
