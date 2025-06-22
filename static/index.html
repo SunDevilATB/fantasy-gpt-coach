@@ -1973,8 +1973,22 @@
             </div>
           </div>
         `;
+
+        // Defense Rankings Summary - THIRD
+        html += `
+          <div class="defense-ranking">
+            <div class="defense-ranking-header">
+              <span class="defense-ranking-title">🛡️ Defense Matchup Guide</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-tertiary);">
+              <span class="defense-rank good">1-10</span> Easy matchup &nbsp;
+              <span class="defense-rank average">11-22</span> Average &nbsp;
+              <span class="defense-rank bad">23-32</span> Tough matchup
+            </div>
+          </div>
+        `;
         
-        // Starting Lineup - THIRD (Organized by Position with enhanced info)
+        // Starting Lineup - FOURTH (Organized by Position with enhanced info)
         html += '<div class="starters-grid">';
         Object.entries(data.recommended_starters).forEach(([pos, players]) => {
           // Display D/ST instead of DST
@@ -2003,20 +2017,6 @@
           `;
         });
         html += '</div>';
-
-        // Defense Rankings Summary
-        html += `
-          <div class="defense-ranking">
-            <div class="defense-ranking-header">
-              <span class="defense-ranking-title">🛡️ Defense Matchup Guide</span>
-            </div>
-            <div style="font-size: 12px; color: var(--text-tertiary);">
-              <span class="defense-rank good">1-10</span> Easy matchup &nbsp;
-              <span class="defense-rank average">11-22</span> Average &nbsp;
-              <span class="defense-rank bad">23-32</span> Tough matchup
-            </div>
-          </div>
-        `;
 
         // Bench Section - FOURTH (Enhanced with injury info)
         if (data.bench && data.bench.length > 0) {
