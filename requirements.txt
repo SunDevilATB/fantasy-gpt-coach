@@ -1,2 +1,4 @@
 flask>=2.3.3
 openai>=1.12.0,<2.0.0
+# Patched CA bundle for the eMudhra certificate compromise.
+certifi>=2026.10.19
